@@ -353,7 +353,7 @@ const galleryImages = useMemo(() => {
     selectedVariantText ? ` (${selectedVariantText})` : ""
   } (Quantity: ${quantity}, Price: Rs. ${effectivePrice.toLocaleString()}). Please let me know the details.`;
 
-  const whatsAppUrl = `https://wa.me/923001234567?text=${encodeURIComponent(
+  const whatsAppUrl = `https://wa.me/92254715421?text=${encodeURIComponent(
     whatsAppMessage
   )}`;
 

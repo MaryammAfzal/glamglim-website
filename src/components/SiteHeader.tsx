@@ -192,9 +192,9 @@ export function SiteHeader() {
               product.category
                 .toLowerCase()
                 .includes(query) ||
-              product.subcategory
-                .toLowerCase()
-                .includes(query)
+             product.subcategory
+  ?.toLowerCase()
+  .includes(query)
             );
           })
           .slice(0, 6)
@@ -326,13 +326,13 @@ export function SiteHeader() {
           <div className="inline-block animate-marquee pl-[100%] pr-[20px]">
             ⚡ CASH ON DELIVERY AVAILABLE ALL OVER PAKISTAN •
             FREE SHIPPING FOR ORDERS OVER RS. 2,500 •
-            ORDER ON WHATSAPP: 0300-1234567 ⚡
+            ORDER ON WHATSAPP: 03254715421 ⚡
           </div>
 
           <div className="inline-block animate-marquee pr-[20px]">
             ⚡ CASH ON DELIVERY AVAILABLE ALL OVER PAKISTAN •
             FREE SHIPPING FOR ORDERS OVER RS. 2,500 •
-            ORDER ON WHATSAPP: 0300-1234567 ⚡
+            ORDER ON WHATSAPP: 03254715421 ⚡
           </div>
 
         </div>
