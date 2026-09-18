@@ -451,35 +451,30 @@ export function ShopProvider({
     // 1. CREATE ORDER
     // =======================================================
 
-    const {
-      data: orderData,
-      error: orderError,
-    } = await supabase
-      .from("orders")
-      .insert({
-        customer_name: shippingInfo.name,
-        phone: shippingInfo.phone,
-        address: shippingInfo.address,
-        city: shippingInfo.city,
-        total,
-        status: "Pending",
-        checkout_method:
-          shippingInfo.checkoutMethod,
-      })
-      .select()
-      .single();
+   const orderId = crypto.randomUUID();
 
-    if (
-      orderError ||
-      !orderData
-    ) {
-      console.error(
-        "Error creating order",
-        orderError
-      );
+const { error: orderError } = await supabase
+  .from("orders")
+  .insert({
+    id: orderId,
+    customer_name: shippingInfo.name,
+    phone: shippingInfo.phone,
+    address: shippingInfo.address,
+    city: shippingInfo.city,
+    total,
+    status: "Pending",
+    checkout_method: shippingInfo.checkoutMethod,
+  });
 
-      return null;
-    }
+if (orderError) {
+  console.error("❌ ORDER CREATION FAILED");
+  console.error("Error message:", orderError.message);
+  console.error("Error code:", orderError.code);
+  console.error("Error details:", orderError.details);
+  console.error("Error hint:", orderError.hint);
+
+  return null;
+}
 
     // =======================================================
     // 2. CREATE ORDER ITEMS
@@ -487,8 +482,7 @@ export function ShopProvider({
 
     const orderItems = cart.map(
       (item) => ({
-        order_id: orderData.id,
-        product_id: item.product.id,
+order_id: orderId,        product_id: item.product.id,
         name: item.product.name,
         price: item.product.price,
         quantity: item.quantity,
@@ -550,43 +544,37 @@ export function ShopProvider({
     // =======================================================
     // 4. CREATE LOCAL ORDER
     // =======================================================
+// =======================================================
+// 4. CREATE LOCAL ORDER
+// =======================================================
 
-    const newOrder: Order = {
-      id: orderData.id,
-      customerName:
-        orderData.customer_name,
-      phone: orderData.phone,
-      address: orderData.address,
-      city: orderData.city,
-      total: orderData.total,
-      status: orderData.status,
-      checkoutMethod:
-        orderData.checkout_method,
-      date: orderData.created_at,
+const newOrder: Order = {
+  id: orderId,
+  customerName: shippingInfo.name,
+  phone: shippingInfo.phone,
+  address: shippingInfo.address,
+  city: shippingInfo.city,
+  total: total,
+  status: "Pending",
+  checkoutMethod: shippingInfo.checkoutMethod,
+  date: new Date().toISOString(),
 
-      items: cart.map(
-        (item) => ({
-          productId:
-            item.product.id,
-          name:
-            item.product.name,
-          price:
-            item.product.price,
-          quantity:
-            item.quantity,
-        })
-      ),
-    };
+  items: cart.map((item) => ({
+    productId: item.product.id,
+    name: item.product.name,
+    price: item.product.price,
+    quantity: item.quantity,
+  })),
+};
+setOrders((prev) => [
+  newOrder,
+  ...prev,
+]);
 
-    setOrders((prev) => [
-      newOrder,
-      ...prev,
-    ]);
+clearCart();
 
-    clearCart();
-
-    return newOrder;
-  };
+return newOrder;
+};
 
   // =========================================================
   // ADD PRODUCT

@@ -1,13 +1,178 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
-import { ArrowRight, BadgeCheck, ShieldCheck, Heart, Sparkles, Send, CheckCircle2, X, Quote } from "lucide-react";
+import { ArrowRight, ShieldCheck, Heart, Sparkles, Send, CheckCircle2, X, Quote, ChevronLeft, ChevronRight } from "lucide-react";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
 import { ArchMotif, SparkleStar } from "@/components/ArchMotif";
 import { ProductCard } from "@/components/ProductCard";
 import { useShop } from "@/lib/store";
+
+/* ---------------------------------------------------------
+   HERO CAROUSEL DATA
+   Swap the `image` paths for your real banner assets.
+--------------------------------------------------------- */
+const carouselSlides = [
+  {
+    id: "catalog",
+    label: "All Products",
+    eyebrow: "Shop All",
+    discount: "70%",
+    title: "The Full Catalog",
+    subtitle: "Makeup, skincare, and perfumes — all in one place.",
+    image: "/fourthbanner.jpg",
+    href: "/shop",
+    badgeFrom: "from-wine",
+    badgeTo: "to-wine-deep",
+  },
+  {
+    id: "makeup",
+    label: "Makeup",
+    eyebrow: "Flash Sale",
+    discount: "60%",
+    title: "Makeup Blowout",
+    subtitle: "Matte lipsticks, velvet glows, and dewy foundations.",
+    image: "/thirdbanner.webp",
+    href: "/shop?category=makeup",
+    badgeFrom: "from-magenta",
+    badgeTo: "to-wine",
+  },
+  {
+    id: "perfumes",
+    label: "Perfumes",
+    eyebrow: "Biggest Sale",
+    discount: "70%",
+    title: "Fine Perfumes, Slashed",
+    subtitle: "Damask rose, woody ambers, and clean floral extracts.",
+    image: "/perfume1.jpg",
+    href: "/shop?category=perfumes",
+    badgeFrom: "from-wine-deep",
+    badgeTo: "to-magenta",
+  },
+  {
+    id: "skincare",
+    label: "Skincare",
+    eyebrow: "Today Only",
+    discount: "50%",
+    title: "Skincare Steal Deals",
+    subtitle: "Serums and moisturizers formulated for everyday glow.",
+    image: "/skincare.webp",
+    href: "/shop?category=skincare",
+    badgeFrom: "from-wine",
+    badgeTo: "to-magenta",
+  },
+];
+
+function HeroCarousel() {
+  const [current, setCurrent] = useState(0);
+
+  const goTo = useCallback((index: number) => {
+    setCurrent((index + carouselSlides.length) % carouselSlides.length);
+  }, []);
+
+  const next = useCallback(() => goTo(current + 1), [current, goTo]);
+  const prev = useCallback(() => goTo(current - 1), [current, goTo]);
+
+  // Auto-advance every 5s
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrent((c) => (c + 1) % carouselSlides.length);
+    }, 5000);
+    return () => clearInterval(timer);
+  }, []);
+
+  return (
+    <section className="relative w-full h-[360px] sm:h-[460px] lg:h-[520px] overflow-hidden bg-charcoal">
+      {carouselSlides.map((slide, index) => (
+        <Link
+          key={slide.id}
+          href={slide.href}
+          aria-label={`Shop ${slide.label}`}
+          className={`group absolute inset-0 transition-opacity duration-700 ease-in-out ${
+            index === current ? "opacity-100 z-10" : "opacity-0 z-0 pointer-events-none"
+          }`}
+        >
+          <img
+            src={slide.image}
+            alt={slide.label}
+            className="absolute inset-0 w-full h-full object-cover scale-105 group-hover:scale-110 transition-transform duration-1000"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-charcoal/90 via-charcoal/40 to-charcoal/15" />
+          <div className={`absolute inset-0 bg-gradient-to-br ${slide.badgeFrom} ${slide.badgeTo} opacity-20 mix-blend-overlay`} />
+
+          {/* Big discount burst badge */}
+          <div
+            className={`absolute top-6 left-6 sm:top-8 sm:left-8 z-20 w-[84px] h-[84px] sm:w-[104px] sm:h-[104px] rounded-full bg-gradient-to-br ${slide.badgeFrom} ${slide.badgeTo} border-4 border-cream/90 shadow-xl flex flex-col items-center justify-center text-cream -rotate-6`}
+          >
+            <span className="text-[9px] sm:text-[10px] uppercase tracking-wide font-semibold leading-none">Up to</span>
+            <span className="font-display text-[26px] sm:text-[32px] leading-none mt-0.5">{slide.discount}</span>
+            <span className="text-[9px] sm:text-[10px] uppercase tracking-wide font-semibold leading-none mt-0.5">Off</span>
+          </div>
+
+          <div className="relative z-10 h-full flex flex-col items-center justify-center text-center px-5">
+            <span className="inline-flex items-center gap-1.5 text-[11px] uppercase tracking-eyebrow font-bold text-cream bg-magenta/90 px-3.5 py-1.5 rounded-full mb-4 shadow-md animate-pulse">
+              <Sparkles size={11} />
+              {slide.eyebrow}
+            </span>
+            <h2 className="font-display text-[34px] sm:text-[48px] lg:text-[58px] text-cream leading-tight max-w-2xl drop-shadow-lg">
+              {slide.title}
+            </h2>
+            <p className="text-[13px] sm:text-[15px] text-cream/90 mt-3 max-w-md">
+              {slide.subtitle}
+            </p>
+            <span className="inline-flex items-center gap-2 mt-7 bg-cream text-wine-deep px-7 py-3.5 text-[13px] uppercase tracking-eyebrow font-bold hover:bg-lilac-soft transition-colors shadow-lg">
+              Shop Now
+              <ArrowRight size={14} strokeWidth={2.5} />
+            </span>
+          </div>
+        </Link>
+      ))}
+
+      {/* Prev / Next arrows */}
+      <button
+        type="button"
+        onClick={(e) => {
+          e.preventDefault();
+          prev();
+        }}
+        aria-label="Previous slide"
+        className="absolute left-3 sm:left-5 top-1/2 -translate-y-1/2 z-20 w-9 h-9 rounded-full bg-cream/80 hover:bg-cream text-charcoal flex items-center justify-center transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-wine"
+      >
+        <ChevronLeft size={18} />
+      </button>
+      <button
+        type="button"
+        onClick={(e) => {
+          e.preventDefault();
+          next();
+        }}
+        aria-label="Next slide"
+        className="absolute right-3 sm:right-5 top-1/2 -translate-y-1/2 z-20 w-9 h-9 rounded-full bg-cream/80 hover:bg-cream text-charcoal flex items-center justify-center transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-wine"
+      >
+        <ChevronRight size={18} />
+      </button>
+
+      {/* Dot indicators — centered */}
+      <div className="absolute bottom-5 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2.5">
+        {carouselSlides.map((slide, index) => (
+          <button
+            key={slide.id}
+            type="button"
+            onClick={(e) => {
+              e.preventDefault();
+              goTo(index);
+            }}
+            aria-label={`Go to ${slide.label} slide`}
+            className={`h-2.5 rounded-full transition-all duration-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cream ${
+              index === current ? "w-7 bg-cream" : "w-2.5 bg-cream/50 hover:bg-cream/75"
+            }`}
+          />
+        ))}
+      </div>
+    </section>
+  );
+}
 
 export default function Home() {
   const { products } = useShop();
@@ -32,104 +197,13 @@ export default function Home() {
     <>
       <SiteHeader />
       <main className="flex-1 overflow-x-hidden">
-        {/* HERO SECTION */}
-        <section className="relative bg-cream pt-8 pb-12 sm:pb-14 overflow-hidden">
-          {/* Subtle Ambient Background Gradients */}
-          <div className="absolute top-[-10%] left-[-10%] w-[35%] aspect-square rounded-full bg-lilac/35 blur-[120px] pointer-events-none" />
-          <div className="absolute bottom-[-10%] right-[-10%] w-[40%] aspect-square rounded-full bg-lilac-soft/60 blur-[130px] pointer-events-none" />
+        {/* HERO CAROUSEL — Catalog / Makeup / Perfumes / Skincare */}
+        <HeroCarousel />
 
-          {/* Floating Sparkles */}
-          <SparkleStar className="absolute top-[15%] left-[8%] w-6 h-6 animate-float text-magenta/40" />
-          <SparkleStar className="absolute bottom-[20%] left-[12%] w-5 h-5 animate-float-delayed text-wine/25" />
-          <SparkleStar className="absolute top-[25%] right-[10%] w-7 h-7 animate-float text-magenta/50" />
-
-          <div className="mx-auto max-w-6xl px-5 sm:px-8 grid lg:grid-cols-12 gap-8 lg:gap-6 items-center relative z-10">
-            {/* Left Column: Hero Text */}
-            <div className="lg:col-span-7 space-y-5 text-left order-2 lg:order-1 animate-fade-in-up">
-              <div className="inline-flex items-center gap-2 px-3 py-1 bg-lilac-soft/80 border border-lilac/40 rounded-full">
-                <Sparkles size={12} className="text-magenta" />
-                <span className="text-[11px] uppercase tracking-eyebrow font-semibold text-magenta">
-                  Glam Glim
-                </span>
-              </div>
-
-              <h1 className="font-display text-[44px] sm:text-[60px] leading-[1.03] text-charcoal tracking-tight">
-                Luxury formulas.<br />
-                <span className="text-wine italic font-medium">Priced honestly.</span>
-              </h1>
-
-              <p className="text-[15px] sm:text-[16px] text-charcoal-soft leading-relaxed max-w-lg">
-                We remove the traditional retail markup that high-end beauty brands add for packaging, distributors, and marketing. Pay only for the premium ingredients that go on your skin.
-              </p>
-
-              <div className="flex flex-wrap items-center gap-4 pt-1">
-                <Link
-                  href="/shop"
-                  className="inline-flex items-center gap-2 bg-wine text-cream px-7 py-3.5 text-[13px] uppercase tracking-eyebrow font-medium hover:bg-wine-deep transition-all duration-300 shadow-md hover:shadow-lg focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-wine"
-                >
-                  Shop The Catalog
-                  <ArrowRight size={14} strokeWidth={2} />
-                </Link>
-                <Link
-                  href="/shop?category=perfumes"
-                  className="inline-flex items-center gap-2 border border-line bg-cream/50 text-charcoal px-6 py-3.5 text-[13px] uppercase tracking-eyebrow font-medium hover:bg-lilac-soft hover:border-wine/40 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-wine"
-                >
-                  Explore Fragrances
-                </Link>
-              </div>
-
-              {/* Compact trust strip */}
-              <div className="pt-4 flex flex-wrap items-center gap-x-5 gap-y-2 border-t border-line/60 max-w-lg">
-                <div className="flex items-center gap-1.5">
-                  <BadgeCheck size={15} className="text-wine shrink-0" strokeWidth={1.75} />
-                  <span className="text-[12px] text-charcoal-soft font-medium">100% Original</span>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <ShieldCheck size={15} className="text-wine shrink-0" strokeWidth={1.75} />
-                  <span className="text-[12px] text-charcoal-soft font-medium">COD Across Pakistan</span>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <Sparkles size={15} className="text-wine shrink-0" strokeWidth={1.75} />
-                  <span className="text-[12px] text-charcoal-soft font-medium">WhatsApp Support</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Right Column: Premium Motif Graphic with Pedestal Image */}
-            <div className="lg:col-span-5 flex justify-center order-1 lg:order-2 relative">
-              <div className="relative w-[260px] sm:w-[320px] h-[340px] sm:h-[410px] flex items-center justify-center">
-                {/* SVG Arch Outline */}
-                <ArchMotif
-                  className="absolute inset-0 w-full h-full text-wine"
-                  strokeColor="#7A1438"
-                  strokeWidth={1.25}
-                />
-
-                {/* Inner Image fitted to Arch shape */}
-                <div className="w-[84%] h-[88%] rounded-t-full overflow-hidden mt-6 relative border border-wine/25 bg-lilac-soft">
-                  <img
-                    src="/hero_pedestal.png"
-                    alt="Luxury cosmetics on marble pedestal"
-                    className="w-full h-full object-cover scale-[1.02] hover:scale-105 transition-transform duration-700"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-charcoal/20 to-transparent pointer-events-none" />
-                </div>
-              </div>
-
-              {/* Aesthetic Floating Badge */}
-              <div className="absolute bottom-4 right-[-10px] sm:right-[-18px] glass-panel p-3.5 shadow-lg rounded-[2px] max-w-[145px] animate-float">
-                <Heart size={16} className="text-magenta mb-1.5 fill-magenta" />
-                <p className="text-[11px] font-semibold text-charcoal uppercase tracking-wider">Top Rated</p>
-                <p className="text-[9px] text-charcoal-soft mt-0.5">Loved by 5,000+ customers</p>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* TRENDING PRODUCTS GRID — front and center, right after the hero */}
+        {/* TRENDING PRODUCTS GRID — front and center, right after the carousel */}
         <section className="bg-lilac-soft/40 py-12 sm:py-14 border-y border-line">
           <div className="mx-auto max-w-6xl px-5 sm:px-8">
-            <div className="flex flex-col sm:flex-row items-start sm:items-end justify-between mb-7 gap-3">
+            {/* <div className="flex flex-col sm:flex-row items-start sm:items-end justify-between mb-7 gap-3">
               <div>
                 <p className="text-[12px] uppercase tracking-eyebrow text-magenta font-semibold mb-1.5">
                   Best of Glam Glim
@@ -145,9 +219,49 @@ export default function Home() {
                 View full range
                 <ArrowRight size={12} strokeWidth={2} />
               </Link>
-            </div>
+            </div> */}
+            <div className="flex flex-col sm:flex-row items-start sm:items-end justify-between mb-7 gap-3">
+  <div>
+    <p className="text-[12px] uppercase tracking-eyebrow text-magenta font-semibold mb-1.5">
+      Best of Glam Glim
+    </p>
+    <h2 className="font-display text-[28px] sm:text-[34px] text-charcoal leading-tight">
+      Everyone's talking about these
+    </h2>
+  </div>
+  {/* Only show here on sm+ screens */}
+  <Link
+    href="/shop"
+    className="hidden sm:inline-flex items-center gap-1.5 text-[13px] uppercase tracking-eyebrow font-semibold text-wine hover:text-wine-deep border-b border-wine pb-0.5 transition-colors shrink-0 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-wine"
+  >
+    View full range
+    <ArrowRight size={12} strokeWidth={2} />
+  </Link>
+</div>
 
-            {activeProducts.length === 0 ? (
+{activeProducts.length === 0 ? (
+  <p className="text-charcoal-soft/60 py-10 text-center text-[14px]">No active products currently. Please configure them in the Admin portal.</p>
+) : (
+  <>
+    <div className="grid grid-cols-2 lg:grid-cols-4 gap-x-5 gap-y-8">
+      {activeProducts.map((product) => (
+        <ProductCard key={product.id} product={product} />
+      ))}
+    </div>
+    {/* Mobile-only, shown after the grid */}
+    <div className="flex sm:hidden justify-center mt-7">
+      <Link
+        href="/shop"
+        className="inline-flex items-center gap-1.5 text-[13px] uppercase tracking-eyebrow font-semibold text-wine hover:text-wine-deep border-b border-wine pb-0.5 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-wine"
+      >
+        View full range
+        <ArrowRight size={12} strokeWidth={2} />
+      </Link>
+    </div>
+  </>
+)}
+
+            {/* {activeProducts.length === 0 ? (
               <p className="text-charcoal-soft/60 py-10 text-center text-[14px]">No active products currently. Please configure them in the Admin portal.</p>
             ) : (
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-x-5 gap-y-8">
@@ -155,9 +269,11 @@ export default function Home() {
                   <ProductCard key={product.id} product={product} />
                 ))}
               </div>
-            )}
+            )} */}
           </div>
         </section>
+
+       
 
         {/* CATEGORY EXPLORER */}
         <section className="mx-auto max-w-6xl px-5 sm:px-8 py-14 sm:py-18 text-center">

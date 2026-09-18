@@ -291,7 +291,6 @@ const galleryImages = useMemo(() => {
 
   const isComingSoon =
     product.category === "hair_acc" ||
-    effectiveInventory === 0 ||
     product.badge === "Coming Soon";
 
   // ---------------------------------------------------------
@@ -751,15 +750,27 @@ const galleryImages = useMemo(() => {
 
               <div className="border-t border-line/60 pt-6">
 
-                <h3 className="text-[12px] uppercase tracking-eyebrow font-semibold text-charcoal mb-3">
+                {/* <h3 className="text-[12px] uppercase tracking-eyebrow font-semibold text-charcoal mb-3">
                   Ingredients
-                </h3>
+                </h3> */}
+{product.description && (
+  <div className="border-t border-line/60 pt-6">
 
+    <h3 className="text-[12px] uppercase tracking-eyebrow font-semibold text-charcoal mb-3">
+      Description
+    </h3>
+
+    <div className="text-[13px] text-charcoal-soft leading-relaxed whitespace-pre-line">
+      <p>{product.description}</p>
+    </div>
+
+  </div>
+)}
                 <div className="text-[13px] text-charcoal-soft leading-relaxed">
-                  <p>
+                  {/* <p>
                     {product.ingredients ||
                       "Raw botanical extracts, skin-safe emollients. Full list pending lab certification."}
-                  </p>
+                  </p> */}
                 </div>
               </div>
 

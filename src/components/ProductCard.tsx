@@ -8,7 +8,8 @@ import { useShop } from "@/lib/store";
 export function ProductCard({ product }: { product: Product }) {
   const { addToCart } = useShop();
 
-  const isComingSoon = product.category === "hair_acc" || product.inventory === 0 || product.badge === "Coming Soon";
+  const isComingSoon = product.category === "hair_acc" || product.badge === "Coming Soon";
+  const isSoldOut = product.inventory === 0 && !isComingSoon;
 
   const primaryImage = product.image
     ? product.image.split(",")[0].trim()
@@ -17,7 +18,7 @@ export function ProductCard({ product }: { product: Product }) {
   const handleQuickAdd = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    if (!isComingSoon) {
+    if (!isComingSoon && !isSoldOut) {
       addToCart(product, 1);
     }
   };
@@ -43,6 +44,10 @@ export function ProductCard({ product }: { product: Product }) {
           {isComingSoon ? (
             <div className="glass-panel text-center py-2 px-3 text-[11px] uppercase tracking-eyebrow font-medium text-charcoal shadow-xs">
               Coming Soon
+            </div>
+          ) : isSoldOut ? (
+            <div className="glass-panel text-center py-2 px-3 text-[11px] uppercase tracking-eyebrow font-medium text-charcoal shadow-xs bg-gray-200">
+              Sold Out
             </div>
           ) : (
             <div className="flex gap-2">
