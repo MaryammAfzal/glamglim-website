@@ -168,7 +168,7 @@ export default function CheckoutPage() {
           .map((item) => `- ${item.name} (Qty: ${item.quantity}) - Rs. ${item.price}`)
           .join("\n");
         const waMessage = `Hi Glam Glim! I placed an order via WhatsApp:\n\n*Order ID:* #${order.id}\n*Customer:* ${order.customerName}\n*Phone:* ${order.phone}\n*Address:* ${order.address}, ${order.city}\n\n*Items Ordered:*\n${itemsText}\n\n*Subtotal:* Rs. ${snapshot.subtotal.toLocaleString()}\n*Shipping:* ${snapshot.shippingFee === 0 ? "FREE" : `Rs. ${snapshot.shippingFee}`}\n*Total Bill:* Rs. ${order.total.toLocaleString()} (COD)`;
-        const waUrl = `https://wa.me/923001234567?text=${encodeURIComponent(waMessage)}`;
+        const waUrl = `https://wa.me/923254715421?text=${encodeURIComponent(waMessage)}`;
         window.open(waUrl, "_blank");
       }
     }
