@@ -406,14 +406,15 @@ const galleryImages = useMemo(() => {
 
           {/* Product details */}
 
-          <div className="grid lg:grid-cols-12 gap-12 lg:gap-16 items-start">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-start">
 
             {/* ================================================= */}
             {/* PRODUCT IMAGE */}
             {/* ================================================= */}
 
-            <div className="lg:col-span-6 relative">
-<div className="bg-lilac-soft rounded-[2px] overflow-hidden border border-line relative shadow-md flex justify-center">                {product.badge && (
+            <div className="lg:col-span-6 relative min-w-0">
+              <div className="bg-lilac-soft rounded-[2px] overflow-hidden border border-line relative shadow-md flex items-center justify-center aspect-square">
+                {product.badge && (
                   <span className="absolute top-4 left-4 z-10 text-[10px] uppercase tracking-eyebrow font-semibold bg-cream text-wine px-3 py-1 shadow-xs border border-line/40">
                     {product.badge}
                   </span>
@@ -428,7 +429,7 @@ const galleryImages = useMemo(() => {
 
               {/* Thumbnail selector - only shows when there is more than one image */}
 
-              {galleryImages.length > 1 && (
+              {/* {galleryImages.length > 1 && (
                 <div className="flex gap-2 mt-3">
                   {galleryImages.map((img, idx) => (
                     <button
@@ -449,7 +450,29 @@ const galleryImages = useMemo(() => {
                     </button>
                   ))}
                 </div>
-              )}
+              )} */}
+              {galleryImages.length > 1 && (
+  <div className="flex gap-2 mt-3 overflow-x-auto pb-1">
+    {galleryImages.map((img, idx) => (
+      <button
+        key={`${img}-${idx}`}
+        type="button"
+        onClick={() => setActiveImageIndex(idx)}
+        className={`w-16 h-16 sm:w-20 sm:h-20 shrink-0 rounded-[2px] overflow-hidden border-2 transition-colors ${
+          idx === activeImageIndex
+            ? "border-wine"
+            : "border-line/50 hover:border-wine/50"
+        }`}
+      >
+        <img
+          src={img}
+          alt={`${product.name} view ${idx + 1}`}
+          className="w-full h-full object-cover"
+        />
+      </button>
+    ))}
+  </div>
+)}
             </div>
 
             {/* ================================================= */}
