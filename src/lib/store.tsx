@@ -1,11 +1,6 @@
 "use client";
 
-import React, {
-  createContext,
-  useContext,
-  useState,
-  useEffect,
-} from "react";
+import React, { createContext, useContext, useState, useEffect } from "react";
 import { Product, ProductVariant } from "./sample-data";
 import { supabase } from "./supabase";
 
@@ -40,10 +35,7 @@ type ShopContextType = {
 
   addToCart: (product: Product, quantity?: number) => void;
   removeFromCart: (productId: string) => void;
-  updateCartQuantity: (
-    productId: string,
-    quantity: number
-  ) => void;
+  updateCartQuantity: (productId: string, quantity: number) => void;
   clearCart: () => void;
 
   placeOrder: (shippingInfo: {
@@ -57,7 +49,7 @@ type ShopContextType = {
   addProduct: (
     product: Omit<Product, "id" | "rating" | "reviewsCount"> & {
       image?: string;
-    }
+    },
   ) => Promise<void>;
 
   updateProduct: (product: Product) => Promise<void>;
@@ -65,7 +57,7 @@ type ShopContextType = {
 
   updateOrderStatus: (
     orderId: string,
-    status: Order["status"]
+    status: Order["status"],
   ) => Promise<void>;
 
   cartOpen: boolean;
@@ -74,15 +66,9 @@ type ShopContextType = {
   refreshData: () => Promise<void>;
 };
 
-const ShopContext = createContext<ShopContextType | undefined>(
-  undefined
-);
+const ShopContext = createContext<ShopContextType | undefined>(undefined);
 
-export function ShopProvider({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export function ShopProvider({ children }: { children: React.ReactNode }) {
   const [products, setProducts] = useState<Product[]>([]);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
@@ -94,108 +80,112 @@ export function ShopProvider({
   // =========================================================
 
   const fetchProducts = async () => {
-  try {
-    // 1. Fetch products
-    const {
-      data: productData,
-      error: productError,
-    } = await supabase
-      .from("products")
-      .select("*")
-      .order("created_at", { ascending: false });
+    try {
+      // 1. Fetch products
+      const { data: productData, error: productError } = await supabase
+        .from("products")
+        .select("*")
+        .order("created_at", { ascending: false });
 
-    if (productError) {
-      console.error("Products fetch error:", productError);
-      return;
-    }
-
-    // 2. Fetch variants separately
-    const {
-      data: variantData,
-      error: variantError,
-    } = await supabase
-      .from("product_variants")
-      .select(`
-        id,
-        product_id,
-        options,
-        price,
-        compare_at_price,
-        inventory,
-        image
-      `);
-
-    if (variantError) {
-      console.error("Product variants fetch error:", variantError);
-
-      // Products can still load even if variants fail
-      if (productData) {
-        setProducts(
-          productData.map((p: any) => ({
-            id: p.id,
-            name: p.name,
-            category: p.category,
-            subcategory: p.subcategory || "",
-            price: Number(p.price) || 0,
-            compareAtPrice: Number(p.compare_at_price) || 0,
-            shortDescription: p.short_description || "",
-            description: p.description || "",
-            ingredients: p.ingredients || "",
-            howToUse: p.how_to_use || "",
-            inventory: Number(p.inventory) || 0,
-            image: p.image || "/lipstick_matte.png",
-            badge: p.badge || "",
-            isPublished: Boolean(p.is_published),
-            rating: Number(p.rating) || 0,
-            reviewsCount: Number(p.reviews_count) || 0,
-            variants: [],
-          }))
-        );
+      if (productError) {
+        console.error("Products fetch error:", productError);
+        return;
       }
 
-      return;
-    }
+      // 2. Fetch variants separately
+      const { data: variantData, error: variantError } = await supabase.from(
+        "product_variants",
+      ).select(`
+          id,
+          product_id,
+          options,
+          price,
+          compare_at_price,
+          inventory,
+          image
+        `);
 
-    // 3. Attach variants to their products
-    const formattedProducts = (productData || []).map(
-      (p: any) => {
+      if (variantError) {
+        console.error("Product variants fetch error:", variantError);
+
+        // Products can still load even if variants fail
+        if (productData) {
+          setProducts(
+            productData.map((p: any) => ({
+              id: p.id,
+              name: p.name,
+              category: p.category,
+              subcategory: p.subcategory || "",
+              price: Number(p.price) || 0,
+              compareAtPrice: Number(p.compare_at_price) || 0,
+              shortDescription: p.short_description || "",
+              description: p.description || "",
+              ingredients: p.ingredients || "",
+              howToUse: p.how_to_use || "",
+              inventory: Number(p.inventory) || 0,
+              image: p.image || "/lipstick_matte.png",
+              badge: p.badge || "",
+              isPublished: Boolean(p.is_published),
+              rating: Number(p.rating) || 0,
+              reviewsCount: Number(p.reviews_count) || 0,
+              variants: [],
+            })),
+          );
+        }
+
+        return;
+      }
+
+      // 3. Attach variants to their products
+      const formattedProducts = (productData || []).map((p: any) => {
         let productVariants = (variantData || [])
-          .filter(
-            (variant: any) =>
-              String(variant.product_id) === String(p.id)
-          )
+          .filter((variant: any) => String(variant.product_id) === String(p.id))
           .map((variant: any) => ({
             id: variant.id,
             options:
-              variant.options &&
-              typeof variant.options === "object"
+              variant.options && typeof variant.options === "object"
                 ? variant.options
                 : {},
             price: Number(variant.price) || 0,
-            compareAtPrice:
-              Number(variant.compare_at_price) || 0,
+            compareAtPrice: Number(variant.compare_at_price) || 0,
             inventory: Number(variant.inventory) || 0,
             image: variant.image || "",
           }));
 
-        // Normalize bad variant data entry (where the first option is used as the key)
+        // Normalize bad variant data entry
         if (productVariants.length > 0) {
           const firstVariantKeys = Object.keys(productVariants[0].options);
+
           if (firstVariantKeys.length === 1) {
             const badKey = firstVariantKeys[0];
-            const isStandardKey = ["color", "shade", "size", "variant", "option"].includes(badKey.toLowerCase());
-            
+
+            const isStandardKey = [
+              "color",
+              "shade",
+              "size",
+              "variant",
+              "option",
+            ].includes(badKey.toLowerCase());
+
             if (!isStandardKey) {
-              // Rename the key to "Shade" for all existing variants
-              productVariants = productVariants.map(v => {
-                const newOptions = { "Shade": v.options[badKey] };
-                return { ...v, options: newOptions };
+              // Rename the key to "Shade"
+              productVariants = productVariants.map((v) => {
+                const newOptions = {
+                  Shade: v.options[badKey],
+                };
+
+                return {
+                  ...v,
+                  options: newOptions,
+                };
               });
-              
-              // Add the missing base variant (since the key itself was the first option)
+
+              // Add missing base variant
               productVariants.unshift({
                 id: p.id + "-base-variant",
-                options: { "Shade": badKey },
+                options: {
+                  Shade: badKey,
+                },
                 price: Number(p.price) || 0,
                 compareAtPrice: Number(p.compare_at_price) || 0,
                 inventory: Number(p.inventory) || 0,
@@ -211,32 +201,27 @@ export function ShopProvider({
           category: p.category,
           subcategory: p.subcategory || "",
           price: Number(p.price) || 0,
-          compareAtPrice:
-            Number(p.compare_at_price) || 0,
-          shortDescription:
-            p.short_description || "",
+          compareAtPrice: Number(p.compare_at_price) || 0,
+          shortDescription: p.short_description || "",
           description: p.description || "",
           ingredients: p.ingredients || "",
           howToUse: p.how_to_use || "",
           inventory: Number(p.inventory) || 0,
-          image:
-            p.image || "/lipstick_matte.png",
+          image: p.image || "/lipstick_matte.png",
           badge: p.badge || "",
           isPublished: Boolean(p.is_published),
           rating: Number(p.rating) || 0,
-          reviewsCount:
-            Number(p.reviews_count) || 0,
+          reviewsCount: Number(p.reviews_count) || 0,
           variants: productVariants,
         };
-      }
-    );
+      });
 
-    // 4. Update products state
-    setProducts(formattedProducts);
-  } catch (error) {
-    console.error("Error fetching products:", error);
-  }
-};
+      // 4. Update products state
+      setProducts(formattedProducts);
+    } catch (error) {
+      console.error("Error fetching products:", error);
+    }
+  };
 
   // =========================================================
   // FETCH ORDERS
@@ -246,7 +231,9 @@ export function ShopProvider({
     const { data, error } = await supabase
       .from("orders")
       .select("*, order_items(*)")
-      .order("created_at", { ascending: false });
+      .order("created_at", {
+        ascending: false,
+      });
 
     if (error) {
       // Silently fail as non-admins are blocked by RLS
@@ -254,29 +241,25 @@ export function ShopProvider({
     }
 
     if (data) {
-      const formattedOrders: Order[] = data.map(
-        (o: any) => ({
-          id: o.id,
-          customerName: o.customer_name,
-          phone: o.phone,
-          address: o.address,
-          city: o.city,
-          total: o.total,
-          status: o.status,
-          checkoutMethod: o.checkout_method,
-          date: o.created_at,
-          created_at: o.created_at,
+      const formattedOrders: Order[] = data.map((o: any) => ({
+        id: o.id,
+        customerName: o.customer_name,
+        phone: o.phone,
+        address: o.address,
+        city: o.city,
+        total: o.total,
+        status: o.status,
+        checkoutMethod: o.checkout_method,
+        date: o.created_at,
+        created_at: o.created_at,
 
-          items: (o.order_items || []).map(
-            (item: any) => ({
-              productId: item.product_id,
-              name: item.name,
-              price: item.price,
-              quantity: item.quantity,
-            })
-          ),
-        })
-      );
+        items: (o.order_items || []).map((item: any) => ({
+          productId: item.product_id,
+          name: item.name,
+          price: item.price,
+          quantity: item.quantity,
+        })),
+      }));
 
       setOrders(formattedOrders);
     }
@@ -287,10 +270,7 @@ export function ShopProvider({
   // =========================================================
 
   const refreshData = async () => {
-    await Promise.all([
-      fetchProducts(),
-      fetchOrders(),
-    ]);
+    await Promise.all([fetchProducts(), fetchOrders()]);
   };
 
   // =========================================================
@@ -299,22 +279,16 @@ export function ShopProvider({
 
   useEffect(() => {
     try {
-      const storedCart =
-        localStorage.getItem("gg_cart");
+      const storedCart = localStorage.getItem("gg_cart");
 
       if (storedCart) {
         setCart(JSON.parse(storedCart));
       }
     } catch (e) {
-      console.error(
-        "Could not access localStorage",
-        e
-      );
+      console.error("Could not access localStorage", e);
     }
 
-    refreshData().then(() =>
-      setInitialized(true)
-    );
+    refreshData().then(() => setInitialized(true));
   }, []);
 
   // =========================================================
@@ -325,15 +299,9 @@ export function ShopProvider({
     if (!initialized) return;
 
     try {
-      localStorage.setItem(
-        "gg_cart",
-        JSON.stringify(cart)
-      );
+      localStorage.setItem("gg_cart", JSON.stringify(cart));
     } catch (e) {
-      console.error(
-        "Could not save cart to localStorage",
-        e
-      );
+      console.error("Could not save cart to localStorage", e);
     }
   }, [cart, initialized]);
 
@@ -341,25 +309,18 @@ export function ShopProvider({
   // ADD TO CART
   // =========================================================
 
-  const addToCart = (
-    product: Product,
-    quantity: number = 1
-  ) => {
+  const addToCart = (product: Product, quantity: number = 1) => {
     setCart((prev) => {
-      const existing = prev.find(
-        (item) =>
-          item.product.id === product.id
-      );
+      const existing = prev.find((item) => item.product.id === product.id);
 
       if (existing) {
         return prev.map((item) =>
           item.product.id === product.id
             ? {
                 ...item,
-                quantity:
-                  item.quantity + quantity,
+                quantity: item.quantity + quantity,
               }
-            : item
+            : item,
         );
       }
 
@@ -372,6 +333,23 @@ export function ShopProvider({
       ];
     });
 
+    // =======================================================
+    // META PIXEL - ADD TO CART
+    // =======================================================
+
+    if (
+      typeof window !== "undefined" &&
+      typeof (window as any).fbq === "function"
+    ) {
+      (window as any).fbq("track", "AddToCart", {
+        content_ids: [product.id],
+        content_name: product.name,
+        content_type: "product",
+        value: product.price * quantity,
+        currency: "PKR",
+      });
+    }
+
     setCartOpen(true);
   };
 
@@ -379,25 +357,15 @@ export function ShopProvider({
   // REMOVE FROM CART
   // =========================================================
 
-  const removeFromCart = (
-    productId: string
-  ) => {
-    setCart((prev) =>
-      prev.filter(
-        (item) =>
-          item.product.id !== productId
-      )
-    );
+  const removeFromCart = (productId: string) => {
+    setCart((prev) => prev.filter((item) => item.product.id !== productId));
   };
 
   // =========================================================
   // UPDATE CART QUANTITY
   // =========================================================
 
-  const updateCartQuantity = (
-    productId: string,
-    quantity: number
-  ) => {
+  const updateCartQuantity = (productId: string, quantity: number) => {
     if (quantity <= 0) {
       removeFromCart(productId);
       return;
@@ -410,8 +378,8 @@ export function ShopProvider({
               ...item,
               quantity,
             }
-          : item
-      )
+          : item,
+      ),
     );
   };
 
@@ -438,196 +406,188 @@ export function ShopProvider({
       return null;
     }
 
-    // Calculate total
-    const total = cart.reduce(
-      (acc, item) =>
-        acc +
-        item.product.price *
-          item.quantity,
-      0
+    // =======================================================
+    // CALCULATE SAME TOTAL AS CHECKOUT PAGE
+    // =======================================================
+
+    const subtotal = cart.reduce(
+      (acc, item) => acc + item.product.price * item.quantity,
+      0,
     );
+
+    const shippingFee = subtotal > 2500 || subtotal === 0 ? 0 : 200;
+
+    const total = subtotal + shippingFee;
 
     // =======================================================
     // 1. CREATE ORDER
     // =======================================================
 
-   const orderId = crypto.randomUUID();
+    const orderId = crypto.randomUUID();
 
-const { error: orderError } = await supabase
-  .from("orders")
-  .insert({
-    id: orderId,
-    customer_name: shippingInfo.name,
-    phone: shippingInfo.phone,
-    address: shippingInfo.address,
-    city: shippingInfo.city,
-    total,
-    status: "Pending",
-    checkout_method: shippingInfo.checkoutMethod,
-  });
+    const { error: orderError } = await supabase.from("orders").insert({
+      id: orderId,
+      customer_name: shippingInfo.name,
+      phone: shippingInfo.phone,
+      address: shippingInfo.address,
+      city: shippingInfo.city,
+      total,
+      status: "Pending",
+      checkout_method: shippingInfo.checkoutMethod,
+    });
 
-if (orderError) {
-  console.error("❌ ORDER CREATION FAILED");
-  console.error("Error message:", orderError.message);
-  console.error("Error code:", orderError.code);
-  console.error("Error details:", orderError.details);
-  console.error("Error hint:", orderError.hint);
+    if (orderError) {
+      console.error("❌ ORDER CREATION FAILED");
+      console.error("Error message:", orderError.message);
+      console.error("Error code:", orderError.code);
+      console.error("Error details:", orderError.details);
+      console.error("Error hint:", orderError.hint);
 
-  return null;
-}
+      return null;
+    }
 
     // =======================================================
     // 2. CREATE ORDER ITEMS
     // =======================================================
 
-    const orderItems = cart.map(
-      (item) => ({
-order_id: orderId,        product_id: item.product.id,
-        name: item.product.name,
-        price: item.product.price,
-        quantity: item.quantity,
-      })
-    );
+    const orderItems = cart.map((item) => ({
+      order_id: orderId,
+      product_id: item.product.id,
+      name: item.product.name,
+      price: item.product.price,
+      quantity: item.quantity,
+    }));
 
-    const {
-      error: itemsError,
-    } = await supabase
+    const { error: itemsError } = await supabase
       .from("order_items")
       .insert(orderItems);
 
     if (itemsError) {
-      console.error(
-        "Error creating order items",
-        itemsError
-      );
+      console.error("Error creating order items", itemsError);
     }
 
     // =======================================================
     // 3. UPDATE INVENTORY
     // =======================================================
 
-    const updatedProducts =
-      products.map((prod) => {
-        const cartItem = cart.find(
-          (item) =>
-            item.product.id ===
-            prod.id
-        );
+    const updatedProducts = products.map((prod) => {
+      const cartItem = cart.find((item) => item.product.id === prod.id);
 
-        if (cartItem) {
-          const newInv = Math.max(
-            0,
-            prod.inventory -
-              cartItem.quantity
-          );
+      if (cartItem) {
+        const newInv = Math.max(0, prod.inventory - cartItem.quantity);
 
-          // Update base product inventory
-          supabase
-            .from("products")
-            .update({
-              inventory: newInv,
-            })
-            .eq("id", prod.id)
-            .then();
-
-          return {
-            ...prod,
+        // Update base product inventory
+        supabase
+          .from("products")
+          .update({
             inventory: newInv,
-          };
-        }
+          })
+          .eq("id", prod.id)
+          .then();
 
-        return prod;
-      });
+        return {
+          ...prod,
+          inventory: newInv,
+        };
+      }
+
+      return prod;
+    });
 
     setProducts(updatedProducts);
 
     // =======================================================
     // 4. CREATE LOCAL ORDER
     // =======================================================
-// =======================================================
-// 4. CREATE LOCAL ORDER
-// =======================================================
 
-const newOrder: Order = {
-  id: orderId,
-  customerName: shippingInfo.name,
-  phone: shippingInfo.phone,
-  address: shippingInfo.address,
-  city: shippingInfo.city,
-  total: total,
-  status: "Pending",
-  checkoutMethod: shippingInfo.checkoutMethod,
-  date: new Date().toISOString(),
+    const newOrder: Order = {
+      id: orderId,
+      customerName: shippingInfo.name,
+      phone: shippingInfo.phone,
+      address: shippingInfo.address,
+      city: shippingInfo.city,
+      total: total,
+      status: "Pending",
+      checkoutMethod: shippingInfo.checkoutMethod,
+      date: new Date().toISOString(),
 
-  items: cart.map((item) => ({
-    productId: item.product.id,
-    name: item.product.name,
-    price: item.product.price,
-    quantity: item.quantity,
-  })),
-};
-setOrders((prev) => [
-  newOrder,
-  ...prev,
-]);
+      items: cart.map((item) => ({
+        productId: item.product.id,
+        name: item.product.name,
+        price: item.product.price,
+        quantity: item.quantity,
+      })),
+    };
 
-clearCart();
+    setOrders((prev) => [newOrder, ...prev]);
 
-return newOrder;
-};
+    // =======================================================
+    // META PIXEL - PURCHASE
+    // COD ONLY
+    // =======================================================
+
+    if (
+      shippingInfo.checkoutMethod === "COD" &&
+      typeof window !== "undefined" &&
+      typeof (window as any).fbq === "function"
+    ) {
+      (window as any).fbq("track", "Purchase", {
+        content_ids: cart.map((item) => item.product.id),
+
+        content_name: cart.map((item) => item.product.name).join(", "),
+
+        content_type: "product",
+
+        value: total,
+
+        currency: "PKR",
+
+        num_items: cart.reduce((sum, item) => sum + item.quantity, 0),
+      });
+    }
+
+    clearCart();
+
+    return newOrder;
+  };
 
   // =========================================================
   // ADD PRODUCT
   // =========================================================
 
   const addProduct = async (
-    newProduct: Omit<
-      Product,
-      "id" | "rating" | "reviewsCount"
-    > & {
+    newProduct: Omit<Product, "id" | "rating" | "reviewsCount"> & {
       image?: string;
-    }
+    },
   ) => {
-    const {
-      data,
-      error,
-    } = await supabase
+    const { data, error } = await supabase
       .from("products")
       .insert({
         name: newProduct.name,
         category: newProduct.category,
 
         // SUBCATEGORY
-        subcategory:
-          newProduct.subcategory,
+        subcategory: newProduct.subcategory,
 
         price: newProduct.price,
-        compare_at_price:
-          newProduct.compareAtPrice,
 
-        short_description:
-          newProduct.shortDescription,
+        compare_at_price: newProduct.compareAtPrice,
 
-        description:
-          newProduct.description,
+        short_description: newProduct.shortDescription,
 
-        ingredients:
-          newProduct.ingredients,
+        description: newProduct.description,
 
-        how_to_use:
-          newProduct.howToUse,
+        ingredients: newProduct.ingredients,
 
-        inventory:
-          newProduct.inventory || 10,
+        how_to_use: newProduct.howToUse,
 
-        image:
-          newProduct.image ||
-          "/lipstick_matte.png",
+        inventory: newProduct.inventory || 10,
+
+        image: newProduct.image || "/lipstick_matte.png",
 
         badge: newProduct.badge,
 
-        is_published:
-          newProduct.isPublished,
+        is_published: newProduct.isPublished,
       })
       .select()
       .single();
@@ -637,28 +597,19 @@ return newOrder;
         {
           ...data,
 
-          subcategory:
-            data.subcategory,
+          subcategory: data.subcategory,
 
-          price:
-            Number(data.price) || 0,
+          price: Number(data.price) || 0,
 
-          compareAtPrice:
-            Number(
-              data.compare_at_price
-            ) || 0,
+          compareAtPrice: Number(data.compare_at_price) || 0,
 
-          shortDescription:
-            data.short_description,
+          shortDescription: data.short_description,
 
-          howToUse:
-            data.how_to_use,
+          howToUse: data.how_to_use,
 
-          isPublished:
-            data.is_published,
+          isPublished: data.is_published,
 
-          reviewsCount:
-            data.reviews_count,
+          reviewsCount: data.reviews_count,
 
           variants: [],
         } as Product,
@@ -672,66 +623,42 @@ return newOrder;
   // UPDATE PRODUCT
   // =========================================================
 
-  const updateProduct = async (
-    updatedProduct: Product
-  ) => {
-    const {
-      error,
-    } = await supabase
+  const updateProduct = async (updatedProduct: Product) => {
+    const { error } = await supabase
       .from("products")
       .update({
-        name:
-          updatedProduct.name,
+        name: updatedProduct.name,
 
-        category:
-          updatedProduct.category,
+        category: updatedProduct.category,
 
         // SUBCATEGORY
-        subcategory:
-          updatedProduct.subcategory,
+        subcategory: updatedProduct.subcategory,
 
-        price:
-          updatedProduct.price,
+        price: updatedProduct.price,
 
-        compare_at_price:
-          updatedProduct.compareAtPrice,
+        compare_at_price: updatedProduct.compareAtPrice,
 
-        short_description:
-          updatedProduct.shortDescription,
+        short_description: updatedProduct.shortDescription,
 
-        description:
-          updatedProduct.description,
+        description: updatedProduct.description,
 
-        ingredients:
-          updatedProduct.ingredients,
+        ingredients: updatedProduct.ingredients,
 
-        how_to_use:
-          updatedProduct.howToUse,
+        how_to_use: updatedProduct.howToUse,
 
-        inventory:
-          updatedProduct.inventory,
+        inventory: updatedProduct.inventory,
 
-        image:
-          updatedProduct.image,
+        image: updatedProduct.image,
 
-        badge:
-          updatedProduct.badge,
+        badge: updatedProduct.badge,
 
-        is_published:
-          updatedProduct.isPublished,
+        is_published: updatedProduct.isPublished,
       })
-      .eq(
-        "id",
-        updatedProduct.id
-      );
+      .eq("id", updatedProduct.id);
 
     if (!error) {
       setProducts((prev) =>
-        prev.map((p) =>
-          p.id === updatedProduct.id
-            ? updatedProduct
-            : p
-        )
+        prev.map((p) => (p.id === updatedProduct.id ? updatedProduct : p)),
       );
     }
   };
@@ -740,52 +667,29 @@ return newOrder;
   // DELETE PRODUCT
   // =========================================================
 
-  const deleteProduct = async (
-    productId: string
-  ) => {
+  const deleteProduct = async (productId: string) => {
     // Delete variants first
-    const {
-      error: variantDeleteError,
-    } = await supabase
+    const { error: variantDeleteError } = await supabase
       .from("product_variants")
       .delete()
-      .eq(
-        "product_id",
-        productId
-      );
+      .eq("product_id", productId);
 
     if (variantDeleteError) {
-      console.error(
-        "Error deleting product variants:",
-        variantDeleteError
-      );
+      console.error("Error deleting product variants:", variantDeleteError);
 
       return;
     }
 
     // Delete product
-    const {
-      error,
-    } = await supabase
+    const { error } = await supabase
       .from("products")
       .delete()
-      .eq(
-        "id",
-        productId
-      );
+      .eq("id", productId);
 
     if (!error) {
-      setProducts((prev) =>
-        prev.filter(
-          (p) =>
-            p.id !== productId
-        )
-      );
+      setProducts((prev) => prev.filter((p) => p.id !== productId));
     } else {
-      console.error(
-        "Error deleting product:",
-        error
-      );
+      console.error("Error deleting product:", error);
     }
   };
 
@@ -795,19 +699,14 @@ return newOrder;
 
   const updateOrderStatus = async (
     orderId: string,
-    status: Order["status"]
+    status: Order["status"],
   ) => {
-    const {
-      error,
-    } = await supabase
+    const { error } = await supabase
       .from("orders")
       .update({
         status,
       })
-      .eq(
-        "id",
-        orderId
-      );
+      .eq("id", orderId);
 
     if (!error) {
       setOrders((prev) =>
@@ -817,8 +716,8 @@ return newOrder;
                 ...o,
                 status,
               }
-            : o
-        )
+            : o,
+        ),
       );
     }
   };
@@ -863,13 +762,10 @@ return newOrder;
 // ===========================================================
 
 export function useShop() {
-  const context =
-    useContext(ShopContext);
+  const context = useContext(ShopContext);
 
   if (!context) {
-    throw new Error(
-      "useShop must be used within a ShopProvider"
-    );
+    throw new Error("useShop must be used within a ShopProvider");
   }
 
   return context;

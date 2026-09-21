@@ -89,7 +89,22 @@ export default function ProductDetailClient({
     setSelectedOptions(firstVariant.options || {});
     setQuantity(1);
   }, [product]);
+  useEffect(() => {
+  if (!product) return;
 
+  if (
+    typeof window !== "undefined" &&
+    typeof (window as any).fbq === "function"
+  ) {
+    (window as any).fbq("track", "ViewContent", {
+      content_ids: [product.id],
+      content_name: product.name,
+      content_type: "product",
+      value: product.price,
+      currency: "PKR",
+    });
+  }
+}, [product]);
   // ---------------------------------------------------------
   // FIND SELECTED VARIANT
   // ---------------------------------------------------------
