@@ -2,7 +2,7 @@
 
 import React, { useEffect } from "react";
 import Link from "next/link";
-import { X, Plus, Minus, ShoppingBag, Trash2 } from "lucide-react";
+import { X, Plus, Minus, ShoppingBag } from "lucide-react";
 import { useShop } from "@/lib/store";
 
 export function MiniCart() {
@@ -79,23 +79,47 @@ export function MiniCart() {
             ) : (
               <div className="space-y-6">
                 {cart.map((item) => (
-                  <div key={item.product.id} className="flex gap-4 pb-6 border-b border-line/60 last:border-none">
-                    <div className="w-20 aspect-[3/4] bg-lilac-soft rounded-[2px] overflow-hidden relative shrink-0">
+                  <div
+                    key={item.product.id}
+                    className="flex gap-4 pb-6 border-b border-line/60 last:border-none"
+                  >
+                    {/* Product image -> links to product detail page */}
+                    <Link
+                      href={`/shop/${item.product.id}`}
+                      onClick={() => setCartOpen(false)}
+                      className="w-20 aspect-[3/4] bg-lilac-soft rounded-[2px] overflow-hidden shrink-0 block"
+                    >
                       <img
                         src={item.product.image}
                         alt={item.product.name}
                         className="w-full h-full object-cover"
                       />
-                    </div>
+                    </Link>
+
                     <div className="flex-1 flex flex-col justify-between py-0.5">
                       <div>
                         <div className="flex justify-between items-start gap-2">
-                          <h3 className="text-[14px] font-medium text-charcoal leading-tight">
+                          {/* Product name -> links to product detail page */}
+                          <Link
+                            href={`/shop/${item.product.id}`}
+                            onClick={() => setCartOpen(false)}
+                            className="text-[14px] font-medium text-charcoal leading-tight hover:text-wine transition-colors"
+                          >
                             {item.product.name}
-                          </h3>
-                          <span className="text-[14px] font-medium text-wine shrink-0">
-                            Rs. {(item.product.price * item.quantity).toLocaleString()}
-                          </span>
+                          </Link>
+                          <div className="flex items-center gap-2 shrink-0">
+                            <span className="text-[14px] font-medium text-wine">
+                              Rs. {(item.product.price * item.quantity).toLocaleString()}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => removeFromCart(item.product.id)}
+                              className="w-5 h-5 flex items-center justify-center rounded-full text-charcoal-soft hover:text-wine hover:bg-lilac-soft transition-colors"
+                              aria-label={`Remove ${item.product.name} from cart`}
+                            >
+                              <X size={13} strokeWidth={2} />
+                            </button>
+                          </div>
                         </div>
                         <p className="text-[11px] uppercase tracking-eyebrow text-charcoal-soft mt-1">
                           {item.product.category}
@@ -122,13 +146,6 @@ export function MiniCart() {
                             <Plus size={12} strokeWidth={2} />
                           </button>
                         </div>
-                        <button
-                          onClick={() => removeFromCart(item.product.id)}
-                          className="text-charcoal-soft hover:text-red-600 transition-colors p-1"
-                          aria-label="Delete item"
-                        >
-                          <Trash2 size={15} strokeWidth={1.5} />
-                        </button>
                       </div>
                     </div>
                   </div>

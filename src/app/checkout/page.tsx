@@ -127,7 +127,7 @@ export default function CheckoutPage() {
     name: "",
     phone: "",
     address: "",
-    city: "Karachi",
+    city: "",
   });
 
   const [formErrors, setFormErrors] =
@@ -552,49 +552,22 @@ ${itemsText}
 
                     {/* CITY */}
 
-                    <div className="min-w-0">
-                      <label className="block text-[11px] uppercase tracking-wider text-charcoal-soft font-semibold mb-1">
-                        City
-                      </label>
+                   {/* CITY */}
 
-                      <select
-                        name="city"
-                        value={formData.city}
-                        onChange={handleInputChange}
-                        className="block w-full min-w-0 max-w-full bg-lilac-soft/35 border border-line px-3 py-2.5 text-[13px] text-charcoal focus:outline-hidden focus:border-wine/50 rounded-[2px] transition-colors cursor-pointer"
-                      >
-                        <option value="Karachi">
-                          Karachi
-                        </option>
-                        <option value="Lahore">
-                          Lahore
-                        </option>
-                        <option value="Islamabad">
-                          Islamabad
-                        </option>
-                        <option value="Rawalpindi">
-                          Rawalpindi
-                        </option>
-                        <option value="Faisalabad">
-                          Faisalabad
-                        </option>
-                        <option value="Multan">
-                          Multan
-                        </option>
-                        <option value="Peshawar">
-                          Peshawar
-                        </option>
-                        <option value="Gujranwala">
-                          Gujranwala
-                        </option>
-                        <option value="Sialkot">
-                          Sialkot
-                        </option>
-                        <option value="Quetta">
-                          Quetta
-                        </option>
-                      </select>
-                    </div>
+<div className="min-w-0">
+  <label className="block text-[11px] uppercase tracking-wider text-charcoal-soft font-semibold mb-1">
+    City
+  </label>
+
+  <input
+    type="text"
+    name="city"
+    value={formData.city}
+    onChange={handleInputChange}
+    placeholder="e.g. Lahore"
+    className="block w-full min-w-0 max-w-full bg-lilac-soft/35 border border-line px-4 py-2.5 text-[13px] text-charcoal focus:outline-hidden focus:border-wine/50 rounded-[2px] transition-colors"
+  />
+</div>
 
                   </div>
 

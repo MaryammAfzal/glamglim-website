@@ -39,8 +39,9 @@ export function ProductCard({ product }: { product: Product }) {
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out"
         />
 
-        {/* Action Overlays on Hover */}
-        <div className="absolute inset-0 bg-charcoal/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-3 gap-2">
+        {/* Action Overlays on Hover — desktop/tablet only. On mobile, tapping the
+            card just opens the product page (no Quick Add, no Quick View). */}
+        <div className="absolute inset-0 bg-charcoal/10 opacity-0 sm:group-hover:opacity-100 transition-opacity duration-300 hidden sm:flex flex-col justify-end p-3 gap-2">
           {isComingSoon ? (
             <div className="glass-panel text-center py-2 px-3 text-[11px] uppercase tracking-eyebrow font-medium text-charcoal shadow-xs">
               Coming Soon
@@ -66,6 +67,20 @@ export function ProductCard({ product }: { product: Product }) {
             </div>
           )}
         </div>
+
+        {/* Mobile-only status badge (Coming Soon / Sold Out), since the hover
+            overlay above is hidden on mobile but this info still matters). */}
+        {(isComingSoon || isSoldOut) && (
+          <div className="absolute bottom-3 left-3 right-3 sm:hidden">
+            <div
+              className={`text-center py-2 px-3 text-[11px] uppercase tracking-eyebrow font-medium text-charcoal shadow-xs ${
+                isComingSoon ? "glass-panel" : "glass-panel bg-gray-200"
+              }`}
+            >
+              {isComingSoon ? "Coming Soon" : "Sold Out"}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Product Text info */}
