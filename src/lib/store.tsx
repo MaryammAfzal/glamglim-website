@@ -44,6 +44,7 @@ type ShopContextType = {
     address: string;
     city: string;
     checkoutMethod: "COD" | "WhatsApp";
+     promoCode?: string;
   }) => Promise<Order | null>;
 
   addProduct: (
@@ -87,10 +88,19 @@ export function ShopProvider({ children }: { children: React.ReactNode }) {
         .select("*")
         .order("created_at", { ascending: false });
 
-      if (productError) {
-        console.error("Products fetch error:", productError);
-        return;
-      }
+     if (productError) {
+  console.error("❌ PRODUCTS FETCH FAILED");
+  console.error("Message:", productError.message);
+  console.error("Code:", productError.code);
+  console.error("Details:", productError.details);
+  console.error("Hint:", productError.hint);
+  console.error(
+    "Full error:",
+    JSON.stringify(productError, null, 2)
+  );
+
+  return;
+}
 
       // 2. Fetch variants separately
       const { data: variantData, error: variantError } = await supabase.from(
@@ -401,6 +411,7 @@ export function ShopProvider({ children }: { children: React.ReactNode }) {
     address: string;
     city: string;
     checkoutMethod: "COD" | "WhatsApp";
+     promoCode?: string;
   }): Promise<Order | null> => {
     if (cart.length === 0) {
       return null;
@@ -415,9 +426,16 @@ export function ShopProvider({ children }: { children: React.ReactNode }) {
       0,
     );
 
-    const shippingFee = subtotal > 2500 || subtotal === 0 ? 0 : 200;
+   
+   const shippingFee = subtotal > 2500 || subtotal === 0 ? 0 : 200;
 
-    const total = subtotal + shippingFee;
+const promoDiscount =
+  shippingInfo.promoCode?.trim().toUpperCase() === "GLAM10" &&
+  subtotal >= 1500
+    ? Math.round(subtotal * 0.10)
+    : 0;
+
+const total = subtotal - promoDiscount + shippingFee;
 
     // =======================================================
     // 1. CREATE ORDER
