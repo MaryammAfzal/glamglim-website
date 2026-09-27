@@ -1,7 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect } from "react";
-import { Product, ProductVariant } from "./sample-data";
+import { Product } from "./sample-data";
 import { supabase } from "./supabase";
 
 export type CartItem = {
@@ -30,6 +30,7 @@ export type Order = {
 
 type ShopContextType = {
   products: Product[];
+  productsLoading: boolean;
   cart: CartItem[];
   orders: Order[];
 
@@ -44,7 +45,7 @@ type ShopContextType = {
     address: string;
     city: string;
     checkoutMethod: "COD" | "WhatsApp";
-     promoCode?: string;
+    promoCode?: string;
   }) => Promise<Order | null>;
 
   addProduct: (
@@ -71,6 +72,7 @@ const ShopContext = createContext<ShopContextType | undefined>(undefined);
 
 export function ShopProvider({ children }: { children: React.ReactNode }) {
   const [products, setProducts] = useState<Product[]>([]);
+  const [productsLoading, setProductsLoading] = useState(true);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
   const [cartOpen, setCartOpen] = useState(false);
@@ -81,6 +83,8 @@ export function ShopProvider({ children }: { children: React.ReactNode }) {
   // =========================================================
 
   const fetchProducts = async () => {
+    setProductsLoading(true);
+
     try {
       // 1. Fetch products
       const { data: productData, error: productError } = await supabase
@@ -88,24 +92,24 @@ export function ShopProvider({ children }: { children: React.ReactNode }) {
         .select("*")
         .order("created_at", { ascending: false });
 
-     if (productError) {
-  console.error("❌ PRODUCTS FETCH FAILED");
-  console.error("Message:", productError.message);
-  console.error("Code:", productError.code);
-  console.error("Details:", productError.details);
-  console.error("Hint:", productError.hint);
-  console.error(
-    "Full error:",
-    JSON.stringify(productError, null, 2)
-  );
+      if (productError) {
+        console.error("❌ PRODUCTS FETCH FAILED");
+        console.error("Message:", productError.message);
+        console.error("Code:", productError.code);
+        console.error("Details:", productError.details);
+        console.error("Hint:", productError.hint);
+        console.error(
+          "Full error:",
+          JSON.stringify(productError, null, 2),
+        );
 
-  return;
-}
+        return;
+      }
 
       // 2. Fetch variants separately
-      const { data: variantData, error: variantError } = await supabase.from(
-        "product_variants",
-      ).select(`
+      const { data: variantData, error: variantError } = await supabase
+        .from("product_variants")
+        .select(`
           id,
           product_id,
           options,
@@ -149,7 +153,10 @@ export function ShopProvider({ children }: { children: React.ReactNode }) {
       // 3. Attach variants to their products
       const formattedProducts = (productData || []).map((p: any) => {
         let productVariants = (variantData || [])
-          .filter((variant: any) => String(variant.product_id) === String(p.id))
+          .filter(
+            (variant: any) =>
+              String(variant.product_id) === String(p.id),
+          )
           .map((variant: any) => ({
             id: variant.id,
             options:
@@ -157,14 +164,17 @@ export function ShopProvider({ children }: { children: React.ReactNode }) {
                 ? variant.options
                 : {},
             price: Number(variant.price) || 0,
-            compareAtPrice: Number(variant.compare_at_price) || 0,
+            compareAtPrice:
+              Number(variant.compare_at_price) || 0,
             inventory: Number(variant.inventory) || 0,
             image: variant.image || "",
           }));
 
         // Normalize bad variant data entry
         if (productVariants.length > 0) {
-          const firstVariantKeys = Object.keys(productVariants[0].options);
+          const firstVariantKeys = Object.keys(
+            productVariants[0].options,
+          );
 
           if (firstVariantKeys.length === 1) {
             const badKey = firstVariantKeys[0];
@@ -197,7 +207,8 @@ export function ShopProvider({ children }: { children: React.ReactNode }) {
                   Shade: badKey,
                 },
                 price: Number(p.price) || 0,
-                compareAtPrice: Number(p.compare_at_price) || 0,
+                compareAtPrice:
+                  Number(p.compare_at_price) || 0,
                 inventory: Number(p.inventory) || 0,
                 image: p.image || "",
               });
@@ -230,6 +241,8 @@ export function ShopProvider({ children }: { children: React.ReactNode }) {
       setProducts(formattedProducts);
     } catch (error) {
       console.error("Error fetching products:", error);
+    } finally {
+      setProductsLoading(false);
     }
   };
 
@@ -321,7 +334,9 @@ export function ShopProvider({ children }: { children: React.ReactNode }) {
 
   const addToCart = (product: Product, quantity: number = 1) => {
     setCart((prev) => {
-      const existing = prev.find((item) => item.product.id === product.id);
+      const existing = prev.find(
+        (item) => item.product.id === product.id,
+      );
 
       if (existing) {
         return prev.map((item) =>
@@ -368,14 +383,19 @@ export function ShopProvider({ children }: { children: React.ReactNode }) {
   // =========================================================
 
   const removeFromCart = (productId: string) => {
-    setCart((prev) => prev.filter((item) => item.product.id !== productId));
+    setCart((prev) =>
+      prev.filter((item) => item.product.id !== productId),
+    );
   };
 
   // =========================================================
   // UPDATE CART QUANTITY
   // =========================================================
 
-  const updateCartQuantity = (productId: string, quantity: number) => {
+  const updateCartQuantity = (
+    productId: string,
+    quantity: number,
+  ) => {
     if (quantity <= 0) {
       removeFromCart(productId);
       return;
@@ -411,7 +431,7 @@ export function ShopProvider({ children }: { children: React.ReactNode }) {
     address: string;
     city: string;
     checkoutMethod: "COD" | "WhatsApp";
-     promoCode?: string;
+    promoCode?: string;
   }): Promise<Order | null> => {
     if (cart.length === 0) {
       return null;
@@ -422,20 +442,21 @@ export function ShopProvider({ children }: { children: React.ReactNode }) {
     // =======================================================
 
     const subtotal = cart.reduce(
-      (acc, item) => acc + item.product.price * item.quantity,
+      (acc, item) =>
+        acc + item.product.price * item.quantity,
       0,
     );
 
-   
-   const shippingFee = subtotal > 2500 || subtotal === 0 ? 0 : 200;
+    const shippingFee =
+      subtotal > 2500 || subtotal === 0 ? 0 : 200;
 
-const promoDiscount =
-  shippingInfo.promoCode?.trim().toUpperCase() === "GLAM10" &&
-  subtotal >= 1500
-    ? Math.round(subtotal * 0.10)
-    : 0;
+    const promoDiscount =
+      shippingInfo.promoCode?.trim().toUpperCase() === "GLAM10" &&
+      subtotal >= 1500
+        ? Math.round(subtotal * 0.1)
+        : 0;
 
-const total = subtotal - promoDiscount + shippingFee;
+    const total = subtotal - promoDiscount + shippingFee;
 
     // =======================================================
     // 1. CREATE ORDER
@@ -443,16 +464,18 @@ const total = subtotal - promoDiscount + shippingFee;
 
     const orderId = crypto.randomUUID();
 
-    const { error: orderError } = await supabase.from("orders").insert({
-      id: orderId,
-      customer_name: shippingInfo.name,
-      phone: shippingInfo.phone,
-      address: shippingInfo.address,
-      city: shippingInfo.city,
-      total,
-      status: "Pending",
-      checkout_method: shippingInfo.checkoutMethod,
-    });
+    const { error: orderError } = await supabase
+      .from("orders")
+      .insert({
+        id: orderId,
+        customer_name: shippingInfo.name,
+        phone: shippingInfo.phone,
+        address: shippingInfo.address,
+        city: shippingInfo.city,
+        total,
+        status: "Pending",
+        checkout_method: shippingInfo.checkoutMethod,
+      });
 
     if (orderError) {
       console.error("❌ ORDER CREATION FAILED");
@@ -481,7 +504,10 @@ const total = subtotal - promoDiscount + shippingFee;
       .insert(orderItems);
 
     if (itemsError) {
-      console.error("Error creating order items", itemsError);
+      console.error(
+        "Error creating order items",
+        itemsError,
+      );
     }
 
     // =======================================================
@@ -489,10 +515,15 @@ const total = subtotal - promoDiscount + shippingFee;
     // =======================================================
 
     const updatedProducts = products.map((prod) => {
-      const cartItem = cart.find((item) => item.product.id === prod.id);
+      const cartItem = cart.find(
+        (item) => item.product.id === prod.id,
+      );
 
       if (cartItem) {
-        const newInv = Math.max(0, prod.inventory - cartItem.quantity);
+        const newInv = Math.max(
+          0,
+          prod.inventory - cartItem.quantity,
+        );
 
         // Update base product inventory
         supabase
@@ -524,7 +555,7 @@ const total = subtotal - promoDiscount + shippingFee;
       phone: shippingInfo.phone,
       address: shippingInfo.address,
       city: shippingInfo.city,
-      total: total,
+      total,
       status: "Pending",
       checkoutMethod: shippingInfo.checkoutMethod,
       date: new Date().toISOString(),
@@ -549,19 +580,48 @@ const total = subtotal - promoDiscount + shippingFee;
       typeof window !== "undefined" &&
       typeof (window as any).fbq === "function"
     ) {
-      (window as any).fbq("track", "Purchase", {
-        content_ids: cart.map((item) => item.product.id),
+      try {
+        const purchaseTrackingKey =
+          `gg_purchase_tracked_${orderId}`;
 
-        content_name: cart.map((item) => item.product.name).join(", "),
+        const alreadyTracked =
+          localStorage.getItem(purchaseTrackingKey);
 
-        content_type: "product",
+        if (!alreadyTracked) {
+          (window as any).fbq("track", "Purchase", {
+            content_ids: cart.map(
+              (item) => item.product.id,
+            ),
 
-        value: total,
+            content_name: cart
+              .map((item) => item.product.name)
+              .join(", "),
 
-        currency: "PKR",
+            content_type: "product",
 
-        num_items: cart.reduce((sum, item) => sum + item.quantity, 0),
-      });
+            value: total,
+
+            currency: "PKR",
+
+            num_items: cart.reduce(
+              (sum, item) => sum + item.quantity,
+              0,
+            ),
+
+            eventID: orderId,
+          });
+
+          localStorage.setItem(
+            purchaseTrackingKey,
+            "1",
+          );
+        }
+      } catch (trackingError) {
+        console.error(
+          "Purchase tracking error:",
+          trackingError,
+        );
+      }
     }
 
     clearCart();
@@ -583,28 +643,16 @@ const total = subtotal - promoDiscount + shippingFee;
       .insert({
         name: newProduct.name,
         category: newProduct.category,
-
-        // SUBCATEGORY
         subcategory: newProduct.subcategory,
-
         price: newProduct.price,
-
         compare_at_price: newProduct.compareAtPrice,
-
         short_description: newProduct.shortDescription,
-
         description: newProduct.description,
-
         ingredients: newProduct.ingredients,
-
         how_to_use: newProduct.howToUse,
-
         inventory: newProduct.inventory || 10,
-
         image: newProduct.image || "/lipstick_matte.png",
-
         badge: newProduct.badge,
-
         is_published: newProduct.isPublished,
       })
       .select()
@@ -619,15 +667,20 @@ const total = subtotal - promoDiscount + shippingFee;
 
           price: Number(data.price) || 0,
 
-          compareAtPrice: Number(data.compare_at_price) || 0,
+          compareAtPrice:
+            Number(data.compare_at_price) || 0,
 
-          shortDescription: data.short_description,
+          shortDescription:
+            data.short_description,
 
-          howToUse: data.how_to_use,
+          howToUse:
+            data.how_to_use,
 
-          isPublished: data.is_published,
+          isPublished:
+            data.is_published,
 
-          reviewsCount: data.reviews_count,
+          reviewsCount:
+            data.reviews_count,
 
           variants: [],
         } as Product,
@@ -641,42 +694,37 @@ const total = subtotal - promoDiscount + shippingFee;
   // UPDATE PRODUCT
   // =========================================================
 
-  const updateProduct = async (updatedProduct: Product) => {
+  const updateProduct = async (
+    updatedProduct: Product,
+  ) => {
     const { error } = await supabase
       .from("products")
       .update({
         name: updatedProduct.name,
-
         category: updatedProduct.category,
-
-        // SUBCATEGORY
         subcategory: updatedProduct.subcategory,
-
         price: updatedProduct.price,
-
-        compare_at_price: updatedProduct.compareAtPrice,
-
-        short_description: updatedProduct.shortDescription,
-
+        compare_at_price:
+          updatedProduct.compareAtPrice,
+        short_description:
+          updatedProduct.shortDescription,
         description: updatedProduct.description,
-
         ingredients: updatedProduct.ingredients,
-
         how_to_use: updatedProduct.howToUse,
-
         inventory: updatedProduct.inventory,
-
         image: updatedProduct.image,
-
         badge: updatedProduct.badge,
-
         is_published: updatedProduct.isPublished,
       })
       .eq("id", updatedProduct.id);
 
     if (!error) {
       setProducts((prev) =>
-        prev.map((p) => (p.id === updatedProduct.id ? updatedProduct : p)),
+        prev.map((p) =>
+          p.id === updatedProduct.id
+            ? updatedProduct
+            : p,
+        ),
       );
     }
   };
@@ -687,13 +735,17 @@ const total = subtotal - promoDiscount + shippingFee;
 
   const deleteProduct = async (productId: string) => {
     // Delete variants first
-    const { error: variantDeleteError } = await supabase
-      .from("product_variants")
-      .delete()
-      .eq("product_id", productId);
+    const { error: variantDeleteError } =
+      await supabase
+        .from("product_variants")
+        .delete()
+        .eq("product_id", productId);
 
     if (variantDeleteError) {
-      console.error("Error deleting product variants:", variantDeleteError);
+      console.error(
+        "Error deleting product variants:",
+        variantDeleteError,
+      );
 
       return;
     }
@@ -705,9 +757,14 @@ const total = subtotal - promoDiscount + shippingFee;
       .eq("id", productId);
 
     if (!error) {
-      setProducts((prev) => prev.filter((p) => p.id !== productId));
+      setProducts((prev) =>
+        prev.filter((p) => p.id !== productId),
+      );
     } else {
-      console.error("Error deleting product:", error);
+      console.error(
+        "Error deleting product:",
+        error,
+      );
     }
   };
 
@@ -748,6 +805,7 @@ const total = subtotal - promoDiscount + shippingFee;
     <ShopContext.Provider
       value={{
         products,
+        productsLoading,
         cart,
         orders,
 
@@ -783,7 +841,9 @@ export function useShop() {
   const context = useContext(ShopContext);
 
   if (!context) {
-    throw new Error("useShop must be used within a ShopProvider");
+    throw new Error(
+      "useShop must be used within a ShopProvider",
+    );
   }
 
   return context;

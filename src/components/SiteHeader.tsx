@@ -155,7 +155,10 @@ export function SiteHeader() {
 
   const searchRef =
     useRef<HTMLDivElement>(null);
-
+const mobileSearchRef =
+  useRef<HTMLDivElement>(null);
+  const mobileSearchInputRef =
+  useRef<HTMLInputElement>(null);
   /* =========================================================
      CART
      ========================================================= */
@@ -205,39 +208,52 @@ export function SiteHeader() {
      ========================================================= */
 
   useEffect(() => {
-    const handleClickOutside = (
-      event: MouseEvent
-    ) => {
-      if (
-        searchRef.current &&
-        !searchRef.current.contains(
-          event.target as Node
-        )
-      ) {
-        setShowSearchResults(false);
-      }
-    };
+  const handleClickOutside = (
+    event: MouseEvent
+  ) => {
+    const target = event.target as Node;
 
-    document.addEventListener(
+    const isInsideDesktopSearch =
+      searchRef.current?.contains(target);
+
+    const isInsideMobileSearch =
+      mobileSearchRef.current?.contains(target);
+
+    if (
+      !isInsideDesktopSearch &&
+      !isInsideMobileSearch
+    ) {
+      setShowSearchResults(false);
+    }
+  };
+
+  document.addEventListener(
+    "mousedown",
+    handleClickOutside
+  );
+
+  return () => {
+    document.removeEventListener(
       "mousedown",
       handleClickOutside
     );
-
-    return () => {
-      document.removeEventListener(
-        "mousedown",
-        handleClickOutside
-      );
-    };
-  }, []);
+  };
+}, []);
 
   /* =========================================================
      CLOSE MOBILE MENU
      ========================================================= */
+const closeMobileMenu = () => {
+  setMobileMenuOpen(false);
+};
 
-  const closeMobileMenu = () => {
-    setMobileMenuOpen(false);
-  };
+const openMobileSearch = () => {
+  setMobileMenuOpen(true);
+
+  setTimeout(() => {
+    mobileSearchInputRef.current?.focus();
+  }, 100);
+};
 
   /* =========================================================
      TOGGLE MAKEUP SECTION
@@ -654,7 +670,7 @@ export function SiteHeader() {
                             (product) => (
                               <Link
                                 key={product.id}
-                                href={`/product/${product.id}`}
+                                href={`/shop/${product.id}`}
                                 onClick={
                                   handleProductClick
                                 }
@@ -757,7 +773,17 @@ export function SiteHeader() {
             {/* =================================================
                 CART
                 ================================================= */}
-
+<button
+  type="button"
+  aria-label="Search"
+  onClick={openMobileSearch}
+  className="md:hidden text-charcoal hover:text-wine transition-colors p-1.5"
+>
+  <Search
+    size={20}
+    strokeWidth={1.5}
+  />
+</button>
             <button
               onClick={() =>
                 setCartOpen(true)
@@ -821,7 +847,10 @@ export function SiteHeader() {
                   MOBILE SEARCH
                   ================================================= */}
 
-              <div className="relative mb-4">
+             <div
+  ref={mobileSearchRef}
+  className="relative mb-4"
+>
 
                 <form
                   onSubmit={handleSearch}
@@ -834,6 +863,7 @@ export function SiteHeader() {
                   />
 
                   <input
+                    ref={mobileSearchInputRef}
                     type="text"
                     placeholder="Search products..."
                     value={searchQuery}
@@ -863,10 +893,11 @@ export function SiteHeader() {
                               (product) => (
                                 <Link
                                   key={product.id}
-                                  href={`/product/${product.id}`}
+                                  href={`/shop/${product.id}`}
                                   onClick={() => {
-                                    handleProductClick();
-                                    closeMobileMenu();
+                                     setShowSearchResults(false);
+    setSearchQuery("");
+    setMobileMenuOpen(false);
                                   }}
                                   className="flex items-center gap-3 px-3 py-3 hover:bg-lilac-soft/30 border-b border-line/60 last:border-b-0"
                                 >

@@ -1,7 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
-import Link from "next/link";
+import React, { useEffect, useRef, useState } from "react";import Link from "next/link";
 import {
   ShoppingBag,
   ArrowLeft,
@@ -53,6 +52,7 @@ export default function CheckoutPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [checkoutMethod, setCheckoutMethod] =
   useState<CheckoutMethod>("COD");
+  const initiateCheckoutTracked = useRef(false);
 
   // =========================
   // PROMO CODE
@@ -80,6 +80,33 @@ export default function CheckoutPage() {
       : 0;
 
   const total = subtotal - discount + shippingFee;
+  // =========================
+// META INITIATE CHECKOUT
+// =========================
+
+useEffect(() => {
+  if (
+    initiateCheckoutTracked.current ||
+    cart.length === 0 ||
+    typeof window === "undefined" ||
+    typeof (window as any).fbq !== "function"
+  ) {
+    return;
+  }
+
+  initiateCheckoutTracked.current = true;
+
+  (window as any).fbq("track", "InitiateCheckout", {
+    content_ids: cart.map((item) => item.product.id),
+    content_type: "product",
+    value: total,
+    currency: "PKR",
+    num_items: cart.reduce(
+      (sum, item) => sum + item.quantity,
+      0
+    ),
+  });
+}, [cart, total]);
 
   // =========================
   // FORM VALIDATION
@@ -133,7 +160,16 @@ const validateForm = () => {
       [name]: undefined,
     }));
   };
-
+const handleFieldFocus = (
+  e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>
+) => {
+  setTimeout(() => {
+    e.target.scrollIntoView({
+      behavior: "smooth",
+      block: "center",
+    });
+  }, 300);
+};
   // =========================
   // PROMO
   // =========================
@@ -211,6 +247,12 @@ if (!order) {
 
 setOrderSummary(snapshot);
 setPlacedOrder(order);
+setTimeout(() => {
+  window.scrollTo({
+    top: 0,
+    behavior: "instant",
+  });
+}, 50);
 
       clearCart();
 
@@ -264,6 +306,24 @@ Total: Rs. ${total.toLocaleString()}`;
       setIsSubmitting(false);
     }
   };
+  const handleCityKeyDown = (
+  e: React.KeyboardEvent<HTMLInputElement>
+) => {
+  if (e.key === "Enter") {
+    e.preventDefault();
+
+    e.currentTarget.blur();
+
+    setTimeout(() => {
+      document
+        .getElementById("checkout-buttons")
+        ?.scrollIntoView({
+          behavior: "smooth",
+          block: "center",
+        });
+    }, 100);
+  }
+};
 
   // =========================
   // EMPTY CART
@@ -418,7 +478,7 @@ Total: Rs. ${total.toLocaleString()}`;
     <>
       <SiteHeader />
 
-      <main className="bg-cream min-h-screen">
+      <main className="bg-cream min-h-screen pb-24 sm:pb-0">
         <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-7 sm:py-10">
 
           {/* BACK */}
@@ -499,6 +559,8 @@ Total: Rs. ${total.toLocaleString()}`;
                         name="name"
                         value={formData.name}
                         onChange={handleInputChange}
+                        onFocus={handleFieldFocus}
+                        enterKeyHint="next"
                         placeholder="Enter your full name"
                         className={`w-full min-w-0 bg-lilac-soft/20 border ${
                           formErrors.name
@@ -524,6 +586,8 @@ Total: Rs. ${total.toLocaleString()}`;
                         type="tel"
                         name="phone"
                         value={formData.phone}
+                        enterKeyHint="next"
+                        onFocus={handleFieldFocus}
                         onChange={handleInputChange}
                         placeholder="03XX XXXXXXX"
                         className={`w-full min-w-0 bg-lilac-soft/20 border ${
@@ -550,6 +614,8 @@ Total: Rs. ${total.toLocaleString()}`;
                         name="address"
                         value={formData.address}
                         onChange={handleInputChange}
+                        onFocus={handleFieldFocus}
+                        enterKeyHint="next"
                         placeholder="House no., street, area, landmark..."
                         rows={3}
                         className={`w-full min-w-0 resize-none bg-lilac-soft/20 border ${
@@ -577,7 +643,10 @@ Total: Rs. ${total.toLocaleString()}`;
     type="text"
     name="city"
     value={formData.city}
+  onFocus={handleFieldFocus}
     onChange={handleInputChange}
+    enterKeyHint="done"
+    onKeyDown={handleCityKeyDown}
     placeholder="Enter your city"
     className={`w-full min-w-0 bg-lilac-soft/20 border ${
       formErrors.city
@@ -882,7 +951,10 @@ Total: Rs. ${total.toLocaleString()}`;
                 DESKTOP: UNDER LEFT COLUMN
                 ============================================ */}
 
-            <div className="w-full min-w-0 lg:col-span-7 lg:col-start-1 order-3">
+            <div
+  id="checkout-buttons"
+  className="w-full min-w-0 lg:col-span-7 lg:col-start-1 order-3"
+>
               <div className="bg-white border border-line p-4 sm:p-5">
 
                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
