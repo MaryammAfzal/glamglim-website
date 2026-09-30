@@ -877,7 +877,7 @@ export default function ProductDetailClient({
                       )}
                     </button>
 
-                    <a
+                    {/* <a
                       href={whatsAppUrl}
                       target="_blank"
                       rel="noopener noreferrer"
@@ -887,9 +887,9 @@ export default function ProductDetailClient({
                         size={16}
                       />
                       Order on WhatsApp
-                    </a>
+                    </a> */}
 
-                    <button
+                    {/* <button
                       type="button"
                       onClick={() =>
                         setIsFavorite(
@@ -911,7 +911,7 @@ export default function ProductDetailClient({
                             : ""
                         }
                       />
-                    </button>
+                    </button> */}
 
                   </div>
 

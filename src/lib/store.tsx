@@ -7,6 +7,8 @@ import { supabase } from "./supabase";
 export type CartItem = {
   product: Product;
   quantity: number;
+    variant?: Record<string, string>;
+
 };
 
 export type Order = {
@@ -20,11 +22,13 @@ export type Order = {
     name: string;
     price: number;
     quantity: number;
+      variant?: Record<string, string>;
+
   }[];
   total: number;
   status: "Pending" | "Shipped" | "Delivered" | "Cancelled";
   date: string;
-  checkoutMethod: "COD" | "WhatsApp";
+  checkoutMethod: "COD" | "Online";
   created_at?: string;
 };
 
@@ -44,7 +48,7 @@ type ShopContextType = {
     phone: string;
     address: string;
     city: string;
-    checkoutMethod: "COD" | "WhatsApp";
+    checkoutMethod: "COD" | "Online";
     promoCode?: string;
   }) => Promise<Order | null>;
 
@@ -332,51 +336,45 @@ export function ShopProvider({ children }: { children: React.ReactNode }) {
   // ADD TO CART
   // =========================================================
 
-  const addToCart = (product: Product, quantity: number = 1) => {
-    setCart((prev) => {
-      const existing = prev.find(
-        (item) => item.product.id === product.id,
+  const addToCart = (
+  product: Product,
+  quantity: number = 1,
+  variant?: Record<string, string>
+) => {
+  setCart((prev) => {
+    const variantKey = JSON.stringify(variant || {});
+
+    const existing = prev.find((item) => {
+      return (
+        item.product.id === product.id &&
+        JSON.stringify(item.variant || {}) === variantKey
       );
-
-      if (existing) {
-        return prev.map((item) =>
-          item.product.id === product.id
-            ? {
-                ...item,
-                quantity: item.quantity + quantity,
-              }
-            : item,
-        );
-      }
-
-      return [
-        ...prev,
-        {
-          product,
-          quantity,
-        },
-      ];
     });
 
-    // =======================================================
-    // META PIXEL - ADD TO CART
-    // =======================================================
-
-    if (
-      typeof window !== "undefined" &&
-      typeof (window as any).fbq === "function"
-    ) {
-      (window as any).fbq("track", "AddToCart", {
-        content_ids: [product.id],
-        content_name: product.name,
-        content_type: "product",
-        value: product.price * quantity,
-        currency: "PKR",
-      });
+    if (existing) {
+      return prev.map((item) =>
+        item.product.id === product.id &&
+        JSON.stringify(item.variant || {}) === variantKey
+          ? {
+              ...item,
+              quantity: item.quantity + quantity,
+            }
+          : item
+      );
     }
 
-    setCartOpen(true);
-  };
+    return [
+      ...prev,
+      {
+        product,
+        quantity,
+        variant,
+      },
+    ];
+  });
+
+  setCartOpen(true);
+};
 
   // =========================================================
   // REMOVE FROM CART
@@ -430,7 +428,7 @@ export function ShopProvider({ children }: { children: React.ReactNode }) {
     phone: string;
     address: string;
     city: string;
-    checkoutMethod: "COD" | "WhatsApp";
+    checkoutMethod: "COD" | "Online";
     promoCode?: string;
   }): Promise<Order | null> => {
     if (cart.length === 0) {
@@ -451,7 +449,7 @@ export function ShopProvider({ children }: { children: React.ReactNode }) {
       subtotal > 2500 || subtotal === 0 ? 0 : 200;
 
     const promoDiscount =
-      shippingInfo.promoCode?.trim().toUpperCase() === "GLAM10" &&
+      shippingInfo.promoCode?.trim().toUpperCase() === "AYESHA10" &&
       subtotal >= 1500
         ? Math.round(subtotal * 0.1)
         : 0;
@@ -497,6 +495,8 @@ export function ShopProvider({ children }: { children: React.ReactNode }) {
       name: item.product.name,
       price: item.product.price,
       quantity: item.quantity,
+  variant_options: item.variant || {},
+
     }));
 
     const { error: itemsError } = await supabase
@@ -565,6 +565,8 @@ export function ShopProvider({ children }: { children: React.ReactNode }) {
         name: item.product.name,
         price: item.product.price,
         quantity: item.quantity,
+          variant: item.variant || undefined,
+
       })),
     };
 

@@ -39,6 +39,8 @@ type OrderItem = {
   name: string;
   price: number;
   quantity: number;
+  variant_options?: Record<string, string>;
+
 };
 
 type Order = {
@@ -295,7 +297,18 @@ const [authorized, setAuthorized] = useState(false);
           status: o.status,
           checkoutMethod: o.checkout_method,
           created_at: o.created_at,
-          order_items: o.order_items || [],
+          order_items: (o.order_items || []).map((item: any) => ({
+  id: item.id,
+  name: item.name,
+  price: Number(item.price) || 0,
+  quantity: Number(item.quantity) || 0,
+  variant_options:
+    item.variant_options &&
+    typeof item.variant_options === "object" &&
+    !Array.isArray(item.variant_options)
+      ? item.variant_options
+      : {},
+})),
         }))
       );
     }

@@ -245,10 +245,13 @@ const mobileSearchRef =
      ========================================================= */
 const closeMobileMenu = () => {
   setMobileMenuOpen(false);
+  setShowSearchResults(false);
 };
 
 const openMobileSearch = () => {
   setMobileMenuOpen(true);
+    setShowSearchResults(false);
+
 
   setTimeout(() => {
     mobileSearchInputRef.current?.focus();
@@ -285,40 +288,42 @@ const openMobileSearch = () => {
      SEARCH SUBMIT
      ========================================================= */
 
-  const handleSearch = (
-    e: React.FormEvent
-  ) => {
-    e.preventDefault();
+ const handleSearch = (e: React.FormEvent) => {
+  e.preventDefault();
 
-    const query =
-      searchQuery.trim();
+  const query = searchQuery.trim();
 
-    setShowSearchResults(false);
+  // Always close search dropdown first
+  setShowSearchResults(false);
 
-    if (!query) {
-      router.push("/shop");
-      return;
-    }
+  if (!query) {
+    setMobileMenuOpen(false);
+    router.push("/shop");
+    return;
+  }
 
-    router.push(
-      `/shop?search=${encodeURIComponent(
-        query
-      )}`
-    );
-  };
+  // Close mobile menu after submitting search
+  setMobileMenuOpen(false);
+
+  router.push(
+    `/shop?search=${encodeURIComponent(query)}`
+  );
+};
 
   /* =========================================================
      SEARCH CHANGE
      ========================================================= */
 
-  const handleSearchChange = (
-    value: string
-  ) => {
-    setSearchQuery(value);
-    setShowSearchResults(
-      value.trim().length > 0
-    );
-  };
+ const handleSearchChange = (value: string) => {
+  setSearchQuery(value);
+
+  if (value.trim().length === 0) {
+    setShowSearchResults(false);
+    return;
+  }
+
+  setShowSearchResults(true);
+};
 
   /* =========================================================
      CLICK PRODUCT FROM SEARCH
@@ -867,6 +872,11 @@ const openMobileSearch = () => {
                     type="text"
                     placeholder="Search products..."
                     value={searchQuery}
+                     onFocus={() => {
+    if (searchQuery.trim()) {
+      setShowSearchResults(true);
+    }
+    }}
                     onChange={(e) =>
                       handleSearchChange(
                         e.target.value

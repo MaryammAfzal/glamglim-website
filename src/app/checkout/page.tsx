@@ -1,11 +1,11 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";import Link from "next/link";
+import React, { useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import {
   ShoppingBag,
   ArrowLeft,
   CheckCircle2,
-  MessageSquare,
   Truck,
   ShieldCheck,
   AlertCircle,
@@ -15,7 +15,7 @@ import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
 import { useShop, Order } from "@/lib/store";
 
-type CheckoutMethod = "COD" | "WhatsApp";
+type CheckoutMethod = "COD" | "Online";
 
 type FormErrors = {
   name?: string;
@@ -23,6 +23,10 @@ type FormErrors = {
   address?: string;
   city?: string;
 };
+
+const JAZZCASH_ACCOUNT_NO = "03254715421";
+const JAZZCASH_ACCOUNT_NAME = "GLAMGLIM";
+const WHATSAPP_NUMBER = "923254715421";
 
 export default function CheckoutPage() {
   const {
@@ -47,12 +51,29 @@ export default function CheckoutPage() {
     discount: number;
     shippingFee: number;
     total: number;
+    checkoutMethod: CheckoutMethod;
   } | null>(null);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [checkoutMethod, setCheckoutMethod] =
-  useState<CheckoutMethod>("COD");
+    useState<CheckoutMethod>("COD");
   const initiateCheckoutTracked = useRef(false);
+
+  // =========================
+  // COPY ACCOUNT NUMBER
+  // =========================
+
+  const [copied, setCopied] = useState(false);
+
+  const handleCopyAccount = async () => {
+    try {
+      await navigator.clipboard.writeText(JAZZCASH_ACCOUNT_NO);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // ignore clipboard failure
+    }
+  };
 
   // =========================
   // PROMO CODE
@@ -80,66 +101,68 @@ export default function CheckoutPage() {
       : 0;
 
   const total = subtotal - discount + shippingFee;
+
   // =========================
-// META INITIATE CHECKOUT
-// =========================
+  // META INITIATE CHECKOUT
+  // =========================
 
-useEffect(() => {
-  if (
-    initiateCheckoutTracked.current ||
-    cart.length === 0 ||
-    typeof window === "undefined" ||
-    typeof (window as any).fbq !== "function"
-  ) {
-    return;
-  }
+  useEffect(() => {
+    if (
+      initiateCheckoutTracked.current ||
+      cart.length === 0 ||
+      typeof window === "undefined" ||
+      typeof (window as any).fbq !== "function"
+    ) {
+      return;
+    }
 
-  initiateCheckoutTracked.current = true;
+    initiateCheckoutTracked.current = true;
 
-  (window as any).fbq("track", "InitiateCheckout", {
-    content_ids: cart.map((item) => item.product.id),
-    content_type: "product",
-    value: total,
-    currency: "PKR",
-    num_items: cart.reduce(
-      (sum, item) => sum + item.quantity,
-      0
-    ),
-  });
-}, [cart, total]);
+    (window as any).fbq("track", "InitiateCheckout", {
+      content_ids: cart.map((item) => item.product.id),
+      content_type: "product",
+      value: total,
+      currency: "PKR",
+      num_items: cart.reduce(
+        (sum, item) => sum + item.quantity,
+        0
+      ),
+    });
+  }, [cart, total]);
 
   // =========================
   // FORM VALIDATION
   // =========================
-const validateForm = () => {
-  const errors: FormErrors = {};
 
-  if (!formData.name.trim()) {
-    errors.name = "Please enter your name.";
-  }
+  const validateForm = () => {
+    const errors: FormErrors = {};
 
-  if (!formData.phone.trim()) {
-    errors.phone = "Please enter your phone number.";
-  } else {
-    const phoneRegex = /^(?:\+92|92|0)3[0-9]{9}$/;
-
-    if (!phoneRegex.test(formData.phone.replace(/[\s-]/g, ""))) {
-      errors.phone = "Please enter a valid Pakistani phone number.";
+    if (!formData.name.trim()) {
+      errors.name = "Please enter your name.";
     }
-  }
 
-  if (!formData.address.trim()) {
-    errors.address = "Please enter your complete address.";
-  }
+    if (!formData.phone.trim()) {
+      errors.phone = "Please enter your phone number.";
+    } else {
+      const phoneRegex = /^(?:\+92|92|0)3[0-9]{9}$/;
 
-  if (!formData.city.trim()) {
-    errors.city = "Please enter your city.";
-  }
+      if (!phoneRegex.test(formData.phone.replace(/[\s-]/g, ""))) {
+        errors.phone = "Please enter a valid Pakistani phone number.";
+      }
+    }
 
-  setFormErrors(errors);
+    if (!formData.address.trim()) {
+      errors.address = "Please enter your complete address.";
+    }
 
-  return Object.keys(errors).length === 0;
-};
+    if (!formData.city.trim()) {
+      errors.city = "Please enter your city.";
+    }
+
+    setFormErrors(errors);
+
+    return Object.keys(errors).length === 0;
+  };
 
   // =========================
   // FORM INPUT
@@ -160,16 +183,18 @@ const validateForm = () => {
       [name]: undefined,
     }));
   };
-const handleFieldFocus = (
-  e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>
-) => {
-  setTimeout(() => {
-    e.target.scrollIntoView({
-      behavior: "smooth",
-      block: "center",
-    });
-  }, 300);
-};
+
+  const handleFieldFocus = (
+    e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
+    setTimeout(() => {
+      e.target.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+      });
+    }, 300);
+  };
+
   // =========================
   // PROMO
   // =========================
@@ -183,7 +208,7 @@ const handleFieldFocus = (
       return;
     }
 
-    if (code !== "GLAM10") {
+    if (code !== "AYESHA10") {
       setPromoError("Invalid promo code.");
       setPromoApplied(false);
       return;
@@ -197,7 +222,7 @@ const handleFieldFocus = (
       return;
     }
 
-    setPromoCode("GLAM10");
+    setPromoCode("AYESHA10");
     setPromoError("");
     setPromoApplied(true);
   };
@@ -230,37 +255,39 @@ const handleFieldFocus = (
       discount,
       shippingFee,
       total,
+      checkoutMethod,
     };
 
     try {
-    const order = await placeOrder({
-  ...formData,
-  checkoutMethod,
-  promoCode: promoApplied
-    ? promoCode
-    : undefined,
-});
+      const order = await placeOrder({
+        ...formData,
+        checkoutMethod,
+        promoCode: promoApplied
+          ? promoCode
+          : undefined,
+      });
 
-if (!order) {
-  throw new Error("Order could not be created.");
-}
+      if (!order) {
+        throw new Error("Order could not be created.");
+      }
 
-setOrderSummary(snapshot);
-setPlacedOrder(order);
-setTimeout(() => {
-  window.scrollTo({
-    top: 0,
-    behavior: "instant",
-  });
-}, 50);
+      setOrderSummary(snapshot);
+      setPlacedOrder(order);
+
+      setTimeout(() => {
+        window.scrollTo({
+          top: 0,
+          behavior: "instant",
+        });
+      }, 50);
 
       clearCart();
 
       // =========================
-      // WHATSAPP
+      // ONLINE PAYMENT -> WHATSAPP SCREENSHOT
       // =========================
 
-      if (checkoutMethod === "WhatsApp") {
+      if (checkoutMethod === "Online") {
         const itemsText = cart
           .map(
             (item) =>
@@ -276,6 +303,7 @@ Customer Name: ${formData.name}
 Phone: ${formData.phone}
 Address: ${formData.address}
 City: ${formData.city}
+Payment Method: Online (JazzCash)
 
 Items:
 ${itemsText}
@@ -291,9 +319,11 @@ ${
             : `Rs. ${shippingFee.toLocaleString()}`
         }
 
-Total: Rs. ${total.toLocaleString()}`;
+Total: Rs. ${total.toLocaleString()}
 
-        const whatsappUrl = `https://wa.me/923254715421?text=${encodeURIComponent(
+I am sending the payment screenshot below.`;
+
+        const whatsappUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(
           message
         )}`;
 
@@ -306,24 +336,25 @@ Total: Rs. ${total.toLocaleString()}`;
       setIsSubmitting(false);
     }
   };
+
   const handleCityKeyDown = (
-  e: React.KeyboardEvent<HTMLInputElement>
-) => {
-  if (e.key === "Enter") {
-    e.preventDefault();
+    e: React.KeyboardEvent<HTMLInputElement>
+  ) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
 
-    e.currentTarget.blur();
+      e.currentTarget.blur();
 
-    setTimeout(() => {
-      document
-        .getElementById("checkout-buttons")
-        ?.scrollIntoView({
-          behavior: "smooth",
-          block: "center",
-        });
-    }, 100);
-  }
-};
+      setTimeout(() => {
+        document
+          .getElementById("checkout-buttons")
+          ?.scrollIntoView({
+            behavior: "smooth",
+            block: "center",
+          });
+      }, 100);
+    }
+  };
 
   // =========================
   // EMPTY CART
@@ -446,6 +477,44 @@ Total: Rs. ${total.toLocaleString()}`;
                 </div>
               </div>
 
+              {/* ONLINE PAYMENT REMINDER */}
+              {orderSummary.checkoutMethod === "Online" && (
+                <div className="border border-line bg-cream p-4 sm:p-5 mb-6 text-sm space-y-2">
+                  <p className="font-semibold text-charcoal">
+                    Complete your payment
+                  </p>
+
+                  <p className="text-charcoal/60 text-xs leading-relaxed">
+                    Send Rs. {orderSummary.total.toLocaleString()} to
+                    the JazzCash account below, then send the payment
+                    screenshot on WhatsApp.
+                  </p>
+
+                  <div className="flex justify-between gap-4 pt-1">
+                    <span className="text-charcoal/60">Account No</span>
+                    <span className="font-medium text-charcoal">
+                      {JAZZCASH_ACCOUNT_NO}
+                    </span>
+                  </div>
+
+                  <div className="flex justify-between gap-4">
+                    <span className="text-charcoal/60">Account Name</span>
+                    <span className="font-medium text-charcoal">
+                      {JAZZCASH_ACCOUNT_NAME}
+                    </span>
+                  </div>
+
+                  <a
+                    href={`https://wa.me/${WHATSAPP_NUMBER}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="block text-center mt-3 bg-[#25D366] text-white px-4 py-3 text-[11px] uppercase tracking-wider font-medium hover:bg-[#20bd5a] transition-colors"
+                  >
+                    Send Screenshot on WhatsApp
+                  </a>
+                </div>
+              )}
+
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <Link
                   href="/shop"
@@ -500,19 +569,6 @@ Total: Rs. ${total.toLocaleString()}`;
               Checkout
             </h1>
           </div>
-
-          {/* ================================================
-              MAIN CHECKOUT GRID
-              MOBILE:
-              Shipping
-              Payment
-              Order Summary
-              Buttons
-
-              DESKTOP:
-              Shipping/Payment | Order Summary
-              Buttons          |
-              ================================================ */}
 
           <div className="grid w-full min-w-0 max-w-full lg:grid-cols-12 gap-6 lg:gap-10 items-start">
 
@@ -633,34 +689,33 @@ Total: Rs. ${total.toLocaleString()}`;
                     </div>
 
                     {/* CITY */}
-                   {/* CITY */}
-<div>
-  <label className="block text-[11px] uppercase tracking-wider font-medium text-charcoal mb-2">
-    City
-  </label>
+                    <div>
+                      <label className="block text-[11px] uppercase tracking-wider font-medium text-charcoal mb-2">
+                        City
+                      </label>
 
-  <input
-    type="text"
-    name="city"
-    value={formData.city}
-  onFocus={handleFieldFocus}
-    onChange={handleInputChange}
-    enterKeyHint="done"
-    onKeyDown={handleCityKeyDown}
-    placeholder="Enter your city"
-    className={`w-full min-w-0 bg-lilac-soft/20 border ${
-      formErrors.city
-        ? "border-red-400"
-        : "border-line"
-    } px-3.5 py-3 text-sm text-charcoal placeholder:text-charcoal/35 focus:outline-hidden focus:border-wine/50`}
-  />
+                      <input
+                        type="text"
+                        name="city"
+                        value={formData.city}
+                        onFocus={handleFieldFocus}
+                        onChange={handleInputChange}
+                        enterKeyHint="done"
+                        onKeyDown={handleCityKeyDown}
+                        placeholder="Enter your city"
+                        className={`w-full min-w-0 bg-lilac-soft/20 border ${
+                          formErrors.city
+                            ? "border-red-400"
+                            : "border-line"
+                        } px-3.5 py-3 text-sm text-charcoal placeholder:text-charcoal/35 focus:outline-hidden focus:border-wine/50`}
+                      />
 
-  {formErrors.city && (
-    <p className="mt-1.5 text-[11px] text-red-500">
-      {formErrors.city}
-    </p>
-  )}
-</div>
+                      {formErrors.city && (
+                        <p className="mt-1.5 text-[11px] text-red-500">
+                          {formErrors.city}
+                        </p>
+                      )}
+                    </div>
                   </div>
                 </div>
 
@@ -677,88 +732,143 @@ Total: Rs. ${total.toLocaleString()}`;
                       </h2>
 
                       <p className="text-[10px] uppercase tracking-wider text-charcoal/40 mt-0.5">
-                        Choose how you'd like to order
+                        Choose how you'd like to pay
                       </p>
                     </div>
                   </div>
 
-                 <div className="space-y-3">
+                  <div className="space-y-3">
 
-  {/* CASH ON DELIVERY */}
-  <button
-    type="button"
-    onClick={() => setCheckoutMethod("COD")}
-    className={`w-full text-left border p-4 transition-colors ${
-      checkoutMethod === "COD"
-        ? "border-wine bg-wine/5"
-        : "border-line bg-cream"
-    }`}
-  >
-    <div className="flex items-start gap-3">
+                    {/* CASH ON DELIVERY */}
+                    <button
+                      type="button"
+                      onClick={() => setCheckoutMethod("COD")}
+                      className={`w-full text-left border p-4 transition-colors ${
+                        checkoutMethod === "COD"
+                          ? "border-wine bg-wine/5"
+                          : "border-line bg-cream"
+                      }`}
+                    >
+                      <div className="flex items-start gap-3">
 
-      {/* RADIO */}
-      <div
-        className={`w-5 h-5 mt-0.5 rounded-full border flex items-center justify-center shrink-0 ${
-          checkoutMethod === "COD"
-            ? "border-wine"
-            : "border-charcoal/30"
-        }`}
-      >
-        {checkoutMethod === "COD" && (
-          <div className="w-2.5 h-2.5 rounded-full bg-wine" />
-        )}
-      </div>
+                        {/* RADIO */}
+                        <div
+                          className={`w-5 h-5 mt-0.5 rounded-full border flex items-center justify-center shrink-0 ${
+                            checkoutMethod === "COD"
+                              ? "border-wine"
+                              : "border-charcoal/30"
+                          }`}
+                        >
+                          {checkoutMethod === "COD" && (
+                            <div className="w-2.5 h-2.5 rounded-full bg-wine" />
+                          )}
+                        </div>
 
-      <div className="min-w-0">
-        <p className="text-sm font-semibold text-charcoal">
-          Cash on Delivery
-        </p>
+                        <div className="min-w-0">
+                          <p className="text-sm font-semibold text-charcoal">
+                            Cash on Delivery
+                          </p>
 
-        <p className="text-[11px] text-charcoal/55 mt-1 leading-relaxed">
-          Pay when your order arrives at your doorstep.
-        </p>
-      </div>
-    </div>
-  </button>
+                          <p className="text-[11px] text-charcoal/55 mt-1 leading-relaxed">
+                            Pay when your order arrives at your doorstep.
+                          </p>
+                        </div>
+                      </div>
+                    </button>
 
-  {/* WHATSAPP */}
-  <button
-    type="button"
-    onClick={() => setCheckoutMethod("WhatsApp")}
-    className={`w-full text-left border p-4 transition-colors ${
-      checkoutMethod === "WhatsApp"
-        ? "border-wine bg-wine/5"
-        : "border-line bg-cream"
-    }`}
-  >
-    <div className="flex items-start gap-3">
+                    {/* ONLINE PAYMENT */}
+                    <div
+                      className={`border transition-colors ${
+                        checkoutMethod === "Online"
+                          ? "border-wine bg-wine/5"
+                          : "border-line bg-cream"
+                      }`}
+                    >
+                      <button
+                        type="button"
+                        onClick={() => setCheckoutMethod("Online")}
+                        className="w-full text-left p-4"
+                      >
+                        <div className="flex items-start gap-3">
 
-      {/* RADIO */}
-      <div
-        className={`w-5 h-5 mt-0.5 rounded-full border flex items-center justify-center shrink-0 ${
-          checkoutMethod === "WhatsApp"
-            ? "border-wine"
-            : "border-charcoal/30"
-        }`}
-      >
-        {checkoutMethod === "WhatsApp" && (
-          <div className="w-2.5 h-2.5 rounded-full bg-wine" />
-        )}
-      </div>
+                          {/* RADIO */}
+                          <div
+                            className={`w-5 h-5 mt-0.5 rounded-full border flex items-center justify-center shrink-0 ${
+                              checkoutMethod === "Online"
+                                ? "border-wine"
+                                : "border-charcoal/30"
+                            }`}
+                          >
+                            {checkoutMethod === "Online" && (
+                              <div className="w-2.5 h-2.5 rounded-full bg-wine" />
+                            )}
+                          </div>
 
-      <div className="min-w-0">
-        <p className="text-sm font-semibold text-charcoal">
-          Confirm on WhatsApp for online payment
-        </p>
+                          <div className="min-w-0">
+                            <p className="text-sm font-semibold text-charcoal">
+                              Online Payment
+                            </p>
 
-        <p className="text-[11px] text-charcoal/55 mt-1 leading-relaxed">
-          Place your order and confirm the details directly on WhatsApp.
-        </p>
-      </div>
-    </div>
-  </button>
+                            <p className="text-[11px] text-charcoal/55 mt-1 leading-relaxed">
+                              Pay via JazzCash and send us the payment
+                              screenshot on WhatsApp.
+                            </p>
+                          </div>
+                        </div>
+                      </button>
 
-</div>
+                      {/* DROPDOWN DETAILS */}
+                      {checkoutMethod === "Online" && (
+                        <div className="px-4 pb-4">
+                          <div className="border border-line bg-white p-4 space-y-3 text-sm">
+                            <div className="flex justify-between gap-4">
+                              <span className="text-charcoal/60">
+                                Method
+                              </span>
+                              <span className="font-medium text-charcoal">
+                                JazzCash
+                              </span>
+                            </div>
+
+                            <div className="flex justify-between items-center gap-4">
+                              <span className="text-charcoal/60">
+                                Account No
+                              </span>
+
+                              <div className="flex items-center gap-2">
+                                <span className="font-medium text-charcoal">
+                                  {JAZZCASH_ACCOUNT_NO}
+                                </span>
+
+                                <button
+                                  type="button"
+                                  onClick={handleCopyAccount}
+                                  className="text-[10px] uppercase tracking-wider border border-wine text-wine px-2 py-1 hover:bg-wine hover:text-cream transition-colors"
+                                >
+                                  {copied ? "Copied" : "Copy"}
+                                </button>
+                              </div>
+                            </div>
+
+                            <div className="flex justify-between gap-4">
+                              <span className="text-charcoal/60">
+                                Account Name
+                              </span>
+                              <span className="font-medium text-charcoal">
+                                {JAZZCASH_ACCOUNT_NAME}
+                              </span>
+                            </div>
+
+                            <p className="text-[10px] text-charcoal/50 leading-relaxed border-t border-line pt-3">
+                              After placing your order, send the payment
+                              screenshot on WhatsApp so we can confirm it.
+                            </p>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                  </div>
                 </div>
 
               </form>
@@ -766,7 +876,6 @@ Total: Rs. ${total.toLocaleString()}`;
 
             {/* ============================================
                 RIGHT COLUMN - ORDER SUMMARY
-                THIS APPEARS BEFORE BUTTONS ON MOBILE
                 ============================================ */}
 
             <div className="w-full min-w-0 lg:col-span-5 order-2">
@@ -826,10 +935,7 @@ Total: Rs. ${total.toLocaleString()}`;
 
                 <div className="border-t border-line pt-5">
 
-                  {/* ======================================
-                      PROMO CODE
-                      ====================================== */}
-
+                  {/* PROMO CODE */}
                   <div className="border border-line bg-cream p-4 rounded-[2px] space-y-3 mb-5">
                     <p className="text-[12px] uppercase tracking-wider font-semibold text-charcoal">
                       Promo Code
@@ -867,7 +973,7 @@ Total: Rs. ${total.toLocaleString()}`;
 
                     {promoApplied && (
                       <p className="text-[11px] text-green-600 font-medium">
-                        🎉 GLAM10 applied — 10% discount added!
+                        🎉 AYESHA10 applied — 10% discount added!
                       </p>
                     )}
                   </div>
@@ -947,63 +1053,61 @@ Total: Rs. ${total.toLocaleString()}`;
 
             {/* ============================================
                 ORDER BUTTONS
-                MOBILE: AFTER ORDER SUMMARY
-                DESKTOP: UNDER LEFT COLUMN
                 ============================================ */}
 
             <div
-  id="checkout-buttons"
-  className="w-full min-w-0 lg:col-span-7 lg:col-start-1 order-3"
->
+              id="checkout-buttons"
+              className="w-full min-w-0 lg:col-span-7 lg:col-start-1 order-3"
+            >
               <div className="bg-white border border-line p-4 sm:p-5">
 
-               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
 
-  {/* COD BUTTON */}
-  <button
-    type="button"
-    disabled={
-      isSubmitting || checkoutMethod !== "COD"
-    }
-    onClick={(e) =>
-      handlePlaceOrder(e, "COD")
-    }
-    className={`w-full min-h-[48px] flex items-center justify-center gap-2 px-5 py-3.5 text-[11px] uppercase tracking-wider font-medium transition-colors ${
-      checkoutMethod === "COD"
-        ? "bg-wine text-cream hover:bg-wine-deep"
-        : "bg-charcoal/10 text-charcoal/30 cursor-not-allowed"
-    } disabled:cursor-not-allowed`}
-  >
-    <ShoppingBag className="w-4 h-4" />
+                  {/* COD BUTTON */}
+                  <button
+                    type="button"
+                    disabled={
+                      isSubmitting || checkoutMethod !== "COD"
+                    }
+                    onClick={(e) =>
+                      handlePlaceOrder(e, "COD")
+                    }
+                    className={`w-full min-h-[48px] flex items-center justify-center gap-2 px-5 py-3.5 text-[11px] uppercase tracking-wider font-medium transition-colors ${
+                      checkoutMethod === "COD"
+                        ? "bg-wine text-cream hover:bg-wine-deep"
+                        : "bg-charcoal/10 text-charcoal/30 cursor-not-allowed"
+                    } disabled:cursor-not-allowed`}
+                  >
+                    <ShoppingBag className="w-4 h-4" />
 
-    {isSubmitting && checkoutMethod === "COD"
-      ? "Processing..."
-      : "Place COD Order"}
-  </button>
+                    {isSubmitting && checkoutMethod === "COD"
+                      ? "Processing..."
+                      : "Place COD Order"}
+                  </button>
 
-  {/* WHATSAPP BUTTON */}
-  <button
-    type="button"
-    disabled={
-      isSubmitting || checkoutMethod !== "WhatsApp"
-    }
-    onClick={(e) =>
-      handlePlaceOrder(e, "WhatsApp")
-    }
-    className={`w-full min-h-[48px] flex items-center justify-center gap-2 px-5 py-3.5 text-[11px] uppercase tracking-wider font-medium transition-colors ${
-      checkoutMethod === "WhatsApp"
-        ? "bg-[#25D366] text-white hover:bg-[#20bd5a]"
-        : "bg-charcoal/10 text-charcoal/30 cursor-not-allowed"
-    } disabled:cursor-not-allowed`}
-  >
-    <MessageSquare className="w-4 h-4" />
+                  {/* ONLINE PAYMENT BUTTON */}
+                  <button
+                    type="button"
+                    disabled={
+                      isSubmitting || checkoutMethod !== "Online"
+                    }
+                    onClick={(e) =>
+                      handlePlaceOrder(e, "Online")
+                    }
+                    className={`w-full min-h-[48px] flex items-center justify-center gap-2 px-5 py-3.5 text-[11px] uppercase tracking-wider font-medium transition-colors ${
+                      checkoutMethod === "Online"
+                        ? "bg-wine text-cream hover:bg-wine-deep"
+                        : "bg-charcoal/10 text-charcoal/30 cursor-not-allowed"
+                    } disabled:cursor-not-allowed`}
+                  >
+                    <ShieldCheck className="w-4 h-4" />
 
-    {isSubmitting && checkoutMethod === "WhatsApp"
-      ? "Processing..."
-      : "Confirm on WhatsApp"}
-  </button>
+                    {isSubmitting && checkoutMethod === "Online"
+                      ? "Processing..."
+                      : "Online Payment"}
+                  </button>
 
-</div>
+                </div>
 
                 <p className="text-[10px] text-center text-charcoal/40 mt-3">
                   By placing your order, you agree to our
